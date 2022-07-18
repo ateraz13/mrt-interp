@@ -6,6 +6,29 @@
 #include <cstring>
 #include "parse.hxx"
 
+std::ostream& operator<<(std::ostream& out_strm, MathOperator op) {
+  switch(op) {
+  case MathOperator::NONE:
+    out_strm << "NONE";
+    break;
+  case MathOperator::PLUS:
+    out_strm << "PLUS";
+    break;
+  case MathOperator::MINUS:
+    out_strm << "MINUS";
+    break;
+  case MathOperator::DIV:
+    out_strm << "DIV";
+    break;
+  case MathOperator::MULT:
+    out_strm << "MULT";
+    break;
+  }
+
+  return out_strm;
+}
+
+
 struct ExpressionToken {
   enum Type {
     NUMBER, OPERATOR
@@ -29,7 +52,26 @@ struct ExpressionToken {
     t.value.math_operator = op;
     return t;
   }
+
+
+  friend std::ostream& operator<<(std::ostream&, ExpressionToken);
+
 };
+
+std::ostream& operator<<(std::ostream& out_strm, ExpressionToken expr){
+
+  switch(expr.type) {
+  case ExpressionToken::Type::NUMBER:
+    out_strm << "{ TYPE: NUMBER, VALUE: " << expr.value.number << " }";
+    break;
+  case ExpressionToken::Type::OPERATOR:
+    out_strm << "{ TYPE: OPERATOR, VALUE: " << expr.value.math_operator << " }";
+    break;
+    default: out_strm << "UNSUPPORTED EXPRESSION_TOKEN FOR PRINTING";
+  }
+  return out_strm;
+}
+
 
 struct TokenList
 {
@@ -78,38 +120,42 @@ TokenizeError tokenize(CharIter begin_iter, CharIter end_iter, Cont& output) {
 
   enum TokenizeState {
     LOOKING_FOR_NUMBER, LOOKING_FOR_OPERATOR
-  } ts;
+  } ts = LOOKING_FOR_NUMBER;
 
+  int count = 0;
   while(begin_iter != end_iter) {
 
-    skip_whitespaces(begin_iter, end_iter);
-    // NOTE: Look for character that would indicate what is ahead
 
     try {
       switch(ts) {
       case LOOKING_FOR_NUMBER: {
         auto res = parse_float(begin_iter, end_iter);
         begin_iter = res.second;
-        output.push_back(ExpressionToken::MakeNumber(res.first));
+        auto token = ExpressionToken::MakeNumber(res.first);
+        output.push_back(token);
         ts = LOOKING_FOR_OPERATOR;
-        break;
+        continue;
       }
       case LOOKING_FOR_OPERATOR: {
         auto res = parse_operator(begin_iter, end_iter);
         begin_iter = res.second;
-        output.push_back(ExpressionToken::MakeMathOperator(res.first));
+        auto token = ExpressionToken::MakeMathOperator(res.first);
+        output.push_back(token);
         ts = LOOKING_FOR_NUMBER;
-        break;
+        continue;
       }
       default: throw std::runtime_error("Invalid tokenize state!");
       }
+
+      begin_iter++;
     } catch (ParseError pe) {
       std::cout << "Error while parsing: " << pe.what() << std::endl;
       return TokenizeError { .type = TokenizeError::Type::FailedParsing };
     }
-    begin_iter++;
   }
+  return TokenizeError { .type = TokenizeError::Type::Nothing };
 }
+
 int main(int argc, char** argv)
 {
   std::cout << "Hello there!" << std::endl;
@@ -119,23 +165,31 @@ int main(int argc, char** argv)
   std::string name;
   std::string input_str;
 
-  std::cout << "Name: ";
-  std::getline(std::cin, input_str);
+  // std::cout << "Name: ";
+  // std::getline(std::cin, input_str);
 
-  name = input_str;
+  // name = input_str;
 
-  std::cout << "Age: ";
-  std::getline(std::cin, input_str);
+  // std::cout << "Age: ";
+  // std::getline(std::cin, input_str);
 
-  age = parse_int(begin(input_str), end(input_str)).first;
+  // age = parse_int(begin(input_str), end(input_str)).first;
 
-  std::cout << "BDI(float): ";
+  // std::cout << "BDI(float): ";
 
-  std::getline(std::cin, input_str);
+  // std::getline(std::cin, input_str);
 
-  bdi = parse_float(begin(input_str), end(input_str)).first;
+  // bdi = parse_float(begin(input_str), end(input_str)).first;
 
-  std::cout << "Hello " << name << ", you are " << age << " years old and your BDI is " << bdi << std::endl;
+  // std::cout << "Hello " << name << ", you are " << age << " years old and your BDI is " << bdi << std::endl;
+
+  std::string expr = "10 + 10";
+  std::vector<ExpressionToken> tokens;
+  tokenize(begin(expr), end(expr), tokens);
+
+  for(auto t: tokens) {
+    std::cout << "Token: " << t << std::endl;
+  }
 
   std::cout << "Press any key to exit..." << std::endl;
   getchar();

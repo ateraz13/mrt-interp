@@ -31,7 +31,7 @@ std::pair<MathOperator, CharIter> parse_operator(CharIter begin_iter, CharIter e
   default: op = MathOperator::NONE; break;
   }
 
-  return {op, begin_iter};
+  return {op, ++begin_iter};
 }
 
 std::pair<int, CharIter> parse_int(CharIter begin_iter, CharIter end_iter)
@@ -99,7 +99,6 @@ std::pair<double, CharIter> parse_float(CharIter begin_iter, CharIter end_iter) 
       throw std::runtime_error(strstrm.str());
     }
 
-    std::cout << "CHAR: " << c << std::endl;
     int n = c - '0';
     sum += n * 1.0f/pow(10, decimal_size - (std::distance(i, last_digit) - 1));
     count += 1;
