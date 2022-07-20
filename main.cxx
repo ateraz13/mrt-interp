@@ -6,6 +6,8 @@
 #include <cstring>
 #include "parse.hxx"
 
+// TODO: Reorder expression tokens into mathematically accurate order.
+
 std::ostream& operator<<(std::ostream& out_strm, MathOperator op) {
   switch(op) {
   case MathOperator::NONE:
@@ -122,9 +124,7 @@ TokenizeError tokenize(CharIter begin_iter, CharIter end_iter, Cont& output) {
     LOOKING_FOR_NUMBER, LOOKING_FOR_OPERATOR
   } ts = LOOKING_FOR_NUMBER;
 
-  int count = 0;
   while(begin_iter != end_iter) {
-
 
     try {
       switch(ts) {
@@ -147,7 +147,6 @@ TokenizeError tokenize(CharIter begin_iter, CharIter end_iter, Cont& output) {
       default: throw std::runtime_error("Invalid tokenize state!");
       }
 
-      begin_iter++;
     } catch (ParseError pe) {
       std::cout << "Error while parsing: " << pe.what() << std::endl;
       return TokenizeError { .type = TokenizeError::Type::FailedParsing };
@@ -165,25 +164,10 @@ int main(int argc, char** argv)
   std::string name;
   std::string input_str;
 
-  // std::cout << "Name: ";
-  // std::getline(std::cin, input_str);
+  std::string expr;
 
-  // name = input_str;
+  std::getline(std::cin, expr);
 
-  // std::cout << "Age: ";
-  // std::getline(std::cin, input_str);
-
-  // age = parse_int(begin(input_str), end(input_str)).first;
-
-  // std::cout << "BDI(float): ";
-
-  // std::getline(std::cin, input_str);
-
-  // bdi = parse_float(begin(input_str), end(input_str)).first;
-
-  // std::cout << "Hello " << name << ", you are " << age << " years old and your BDI is " << bdi << std::endl;
-
-  std::string expr = "10 + 10";
   std::vector<ExpressionToken> tokens;
   tokenize(begin(expr), end(expr), tokens);
 
