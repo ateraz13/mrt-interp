@@ -3,6 +3,7 @@
 #include <cmath>
 #include <algorithm>
 #include <iostream>
+#include <boost/format.hpp>
 
 // NOTE: This function is being called several times in a row, first in the tokenize function
 // and then in the parse functions one after another.
@@ -35,14 +36,15 @@ bool is_digit(char c) {
 }
 
 std::pair<bool, CharIter> find_decimal_point_before_space(CharIter begin_iter, CharIter end_iter) {
-  while(begin_iter != end_iter && is_digit(*begin_iter) && !is_space(*begin_iter)) {
+  while(begin_iter != end_iter && !is_space(*begin_iter)) {
     if(*begin_iter == '.') {
-      std::cout << "FOUND POINT!\n";
       return { true, begin_iter };
+    }
+    else if (!is_digit(*begin_iter)){
+      throw ParseError((boost::format("Expected floating point literal\nInvalid character: %1%") % *begin_iter ).str());
     }
     begin_iter++;
   }
-  std::cout << "POINT WASN'T FOUND!\n";
   return { false, begin_iter };
 }
 
@@ -99,7 +101,6 @@ std::pair<int, CharIter> parse_int(CharIter begin_iter, CharIter end_iter)
 // and parse it as if it was an integer, however if you stumble upon a decimal point
 // change into floating point parsing.
 std::pair<double, CharIter> parse_float(CharIter begin_iter, CharIter end_iter)  {
-  std::stringstream strstrm;
   int count = 1;
   double sum = 0;
 
@@ -120,8 +121,7 @@ std::pair<double, CharIter> parse_float(CharIter begin_iter, CharIter end_iter) 
   for(; i != decimal_point_pos; i++) {
     auto c = *i;
     if(c < '0' || c > '9') {
-      strstrm << "Expected floating point literal\nInvalid digit: '" << c << "'";
-      throw ParseError(strstrm.str());
+      throw ParseError((boost::format("Expected floating point literal\nInvalid digit: '%1%'") %  c).str());
     }
 
     int n = c - '0';
@@ -134,8 +134,7 @@ std::pair<double, CharIter> parse_float(CharIter begin_iter, CharIter end_iter) 
   for(i++; i < last_digit; i++) {
     auto c = *i;
     if(c < '0' || c > '9') {
-      strstrm << "Expected floating point literal!\nInvalid digit after decimal point: '" << c << "'";
-      throw std::runtime_error(strstrm.str());
+      throw ParseError ((boost::format("Expected floating point literal\nInvalid Character: '%1%'") % *begin_iter).str());
     }
 
     int n = c - '0';
@@ -144,8 +143,7 @@ std::pair<double, CharIter> parse_float(CharIter begin_iter, CharIter end_iter) 
   }
 
   if(begin_iter != end_iter && !is_space(*begin_iter)) {
-    strstrm << "Unexpected symbol after integer literal: '" <<  *begin_iter << "'";
-    throw ParseError (strstrm.str());
+    throw ParseError ((boost::format("Unexpected symbol after integer literal: '%1%'") % *begin_iter).str());
   }
 
   return { is_negative ? -sum : sum, i };
