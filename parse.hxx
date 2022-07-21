@@ -20,4 +20,5 @@ std::pair<MathOperator, CharIter> parse_operator(CharIter begin_iter, CharIter e
 std::pair<int, CharIter> parse_int(CharIter begin_iter, CharIter end_iter);
 std::pair<double, CharIter> parse_float(CharIter begin_iter, CharIter end_iter);
 
+std::ostream& operator<<(std::ostream& out_strm, MathOperator op);
 #endif // PARSE_HXX

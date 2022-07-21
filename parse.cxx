@@ -52,12 +52,17 @@ std::pair<MathOperator, CharIter> parse_operator(CharIter begin_iter, CharIter e
   MathOperator op  { MathOperator::NONE };
 
   skip_whitespaces(begin_iter, end_iter);
+
+  if(begin_iter == end_iter) {
+    return {op, end_iter};
+  }
+
   switch(*begin_iter) {
   case '+': op = MathOperator::PLUS; break;
   case '-': op = MathOperator::MINUS; break;
   case '/': op = MathOperator::DIV; break;
   case '*': op = MathOperator::MULT; break;
-  default: op = MathOperator::NONE; break;
+  default: throw ParseError((boost::format("Expected an operator found %1%") % *begin_iter).str()); break;
   }
 
   return {op, ++begin_iter};
@@ -74,9 +79,7 @@ std::pair<int, CharIter> parse_int(CharIter begin_iter, CharIter end_iter)
   bool is_negative = *begin_iter == '-' ? true  : false;
   is_negative ? begin_iter++ : begin_iter; // increment iter
 
-
   auto last_digit = find_last_digit(begin_iter, end_iter);
-
 
   for(auto& i = begin_iter; i != last_digit; i++) {
     auto c = *i;
@@ -97,9 +100,6 @@ std::pair<int, CharIter> parse_int(CharIter begin_iter, CharIter end_iter)
   return { is_negative ? -sum : sum, begin_iter };
 }
 
-// FIXME: Rewrite this with different method, go through each character
-// and parse it as if it was an integer, however if you stumble upon a decimal point
-// change into floating point parsing.
 std::pair<double, CharIter> parse_float(CharIter begin_iter, CharIter end_iter)  {
   int count = 1;
   double sum = 0;
@@ -147,4 +147,27 @@ std::pair<double, CharIter> parse_float(CharIter begin_iter, CharIter end_iter) 
   }
 
   return { is_negative ? -sum : sum, i };
+}
+
+
+std::ostream& operator<<(std::ostream& out_strm, MathOperator op) {
+  switch(op) {
+  case MathOperator::NONE:
+    out_strm << "NONE";
+    break;
+  case MathOperator::PLUS:
+    out_strm << "PLUS";
+    break;
+  case MathOperator::MINUS:
+    out_strm << "MINUS";
+    break;
+  case MathOperator::DIV:
+    out_strm << "DIV";
+    break;
+  case MathOperator::MULT:
+    out_strm << "MULT";
+    break;
+  }
+
+  return out_strm;
 }

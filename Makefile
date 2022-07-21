@@ -7,7 +7,10 @@
 CXX=g++
 CXX_FLAGS=-std=c++20 -g
 
-interp: main.cxx parse.cxx
+interp: main.cxx parse.cxx syntax.cxx
 	${CXX} -o $@ $^ ${CXX_FLAGS}
+
+clear:
+	rm ./interp
 
 # end
