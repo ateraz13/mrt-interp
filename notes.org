@@ -48,4 +48,11 @@ Using this we would be able to compose syntax parsers relatively easily and crea
 
     This is really important for compilers because we want to tell the user/programmer as much information about their errrors as possible before the compiler halts, to avoid unnecessary recompilation and thus avoid unnecessary parsing.
 
-    However I do not know how compilers avoid misinterpting some syntactical elements when they stumble upon an error and the tokenizer is in an incorrect state. I suppose they implement some form of mechanism into the tokenizer to reset into a stable state and the better the compiler the better it will be at preventing incorrect states and to recover from them in order for it to proceed with the compilation.
+    However I do not know how compilers avoid misinterpreting some syntactical elements when they stumble upon an error and the tokenizer is in an incorrect state. I suppose they implement some form of mechanism into the tokenizer to reset into a stable state and the better the compiler the better it will be at preventing incorrect states and to recover from them in order for it to proceed with the compilation.
+
+
+* Reminders
+** Interpreter
+- [ ] Interpreter TODOs [0/2]
+  - [ ] Literals will be part of a instruction
+    - [ ] Jump instructions jump to addresses stored by registers
