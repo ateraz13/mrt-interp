@@ -1,0 +1,51 @@
+#+title: Design notes
+
+* General ideas
+** Interpreter
++ Instead of translating tokens directly into instructions we can translate expressions into
+  proper mathematical representation in memory but as this is an interpreter indirection might
+  not be the greatest factor for performance but it would make the program easier to understand.
+  For example, the mathematical parts of expressions could be encoded as terms and sets of terms
+  which than could be easier to work with in the program.
+  We may decode syntactical elements before we translate the information into bytecode.
+** Parser
++ Token will not copy parts of a string but rather use referencing
+  through iterators into the original string but that is only neccessary
+  for a more generic parser. In a sophisticated parser there are many different
+  types of tokens that could be extracted from a text and it would be impractical
+  to parse everything in the first pass(tokenization). Rather we separate keywords
+  and other forms of tokens using simple iterators and than comeback to them in the
+  parsing stage to produce values out of them, we could also copy all the substrings
+  but that would require unnecessary memory allocation which we do not want due to
+  peformance reasons.
+
+
+
++ The interpreter is going to be a stack machine
+  argmuments for instructions will be suplied through the stack;
++ The intepreter will use registers to operate on data in order for the bytecode
+  to be easier to translate to traditonal machine code, if we will feel like writing a compiler
+  in the future.
+
+*** Ideas
+**** Stack based tokenization/parsing
+Instead of parsing things separately we could parse everything in one iteration by using a stack based state machine. For example, if  we are currently going over a set of space characters we would push a state onto the stack called "SPACE_STACK" and we would proceed with parsing until we could find the total count of space characters in a row and add it to the stack.
+
+To provide a more visual represation of this technique I provide a visual clue bellow.
+
+string: "   123  ffff"
+stack: SPACE_SET:3, DIGIT_SET:3, SPACE_SET:2, LETTER_SET:4
+
+From these basic character sets we could compose more sophisticated sets that would represent things such as identifiers.
+
+For example, ALPHANUNEMIC_SET would be copmosed of DIGIT_SET and LETTER_SET.
+A token would be a sequence of such "Character Sets", as an example a typical identifier would start with an LETTER_SET:1 and proceed with ALPHANUMERIC_SET:0-inf.
+
+Using this we would be able to compose syntax parsers relatively easily and create custom language parsers with ease.
+
+* Compilers IDEAS
+    Compilers probably split the source code into chunks that are easily distinguishable, such as statements separated by ';' (in C/C++), and treat them as separate entities in order for them to not halt every time they stumble upon an error.
+
+    This is really important for compilers because we want to tell the user/programmer as much information about their errrors as possible before the compiler halts, to avoid unnecessary recompilation and thus avoid unnecessary parsing.
+
+    However I do not know how compilers avoid misinterpting some syntactical elements when they stumble upon an error and the tokenizer is in an incorrect state. I suppose they implement some form of mechanism into the tokenizer to reset into a stable state and the better the compiler the better it will be at preventing incorrect states and to recover from them in order for it to proceed with the compilation.

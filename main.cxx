@@ -9,16 +9,11 @@
 
 // TODO: Reorder expression tokens into mathematically accurate order.
 
-
 struct RegisterBank {
 
 };
 
 struct MemoryBank {
-
-};
-
-class Interpreter {
 
 };
 
@@ -30,6 +25,10 @@ struct Instruction
     PLUS_FLOAT, MINUS_FLOAT, DIV_FLOAT, MULT_FLOAT,
     PUSH_STACK, POP_STACK, LOAD_REGISTER, STORE_REGISTER,
   } op_code;
+
+};
+
+class Interpreter {
 
 };
 
