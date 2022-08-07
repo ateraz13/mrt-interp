@@ -15,7 +15,7 @@ class Interpreter
   struct Instruction
   {
     // NOTE: Assign instruction opcodes with specific values.
-    namespace OpCodes {
+    struct OpCodes {
 
       static const uint8_t PUSH_STACK = 0;
       static const uint8_t POP_STACK = 1;

@@ -55,4 +55,4 @@ Using this we would be able to compose syntax parsers relatively easily and crea
 ** Interpreter
 - [ ] Interpreter TODOs [0/2]
   - [ ] Literals will be part of a instruction
-    - [ ] Jump instructions jump to addresses stored by registers
+  - [ ] Jump instructions jump to addresses stored by registers
