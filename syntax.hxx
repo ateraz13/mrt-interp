@@ -64,6 +64,8 @@ struct ExpressionToken {
   friend std::ostream& operator<<(std::ostream&, ExpressionToken);
 };
 
+// I would much prefer for this function to be in the source file but MSVC seems to not like specialization of templates.
+// The program doesn't seem to link under MSVC if the implementation is in the source file.
 template<class Container>
 TokenizeError tokenize(CharIter begin_iter, CharIter end_iter, Container& output) {
 

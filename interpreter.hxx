@@ -3,12 +3,14 @@
 #include <array>
 #include <vector>
 #include <cstdint>
+#include <stdexcept>
 
 // TODO: Reorder expression tokens into mathematically accurate order.
 // NOTE: All intruction are 32-bit but the op code only occupies the first 8-bits.
 
-class Interpreter
+class VirtualMachine
 {
+public:
   using MemPtr = uint64_t;
   using RegID = uint8_t; // Register ID
 
@@ -42,7 +44,7 @@ class Interpreter
       static const uint8_t DIV_INT = 16;
       static const uint8_t MULT_INT = 17;
 
-      // static const uint8_t PLUS_IMMEDIATE_INT = 18;
+      static const uint8_t PLUS_IMMEDIATE_INT = 18;
       static const uint8_t MINUS_IMMEDIATE_INT = 19;
       static const uint8_t DIV_IMMEDIATE_INT = 20;
       static const uint8_t MULT_IMMEDIATE_INT = 21;
@@ -52,7 +54,7 @@ class Interpreter
       static const uint8_t DIV_FLOAT = 24;
       static const uint8_t MULT_FLOAT = 25;
 
-      // static const uint8_t PLUS_IMMEDIATE_FLOAT = 26;
+      static const uint8_t PLUS_IMMEDIATE_FLOAT = 26;
       static const uint8_t MINUS_IMMEDIATE_FLOAT = 27;
       static const uint8_t DIV_IMMEDIATE_FLOAT = 28;
       static const uint8_t MULT_IMMEDIATE_FLOAT = 29;
@@ -70,13 +72,16 @@ class Interpreter
 
   };
 
-
-  struct ExecutionEngine
+public:
+  struct Interpreter
   {
-
     struct MemoryBank
     {
+    public:
       constexpr static uint64_t MEMORY_SIZE = 64*1024; // 64 kilobytes
+      // NOTE: Stack grows down
+      constexpr static uint64_t STACK_LOWER_LIMIT = 0; // 64 kilobytes
+      constexpr static uint64_t STACK_UPPER_LIMIT = MEMORY_SIZE/2; // 64 kilobytes
 
       // NOTE: It might be a good idea to store memory buffers as uint32_t and values in aligned
       // memory for performance puposes but for now it is unnecessary.
@@ -99,15 +104,46 @@ class Interpreter
       MemPtr stack_ptr;
       MemPtr program_counter;
 
-    } m_mb;
+      void push_register_to_stack(RegID rid) {
+        //FIXME: MAybe validate regid here
+        if(stack_ptr <= STACK_LOWER_LIMIT) {
+          throw std::runtime_error("Stack underflow!");
+        }
+        memory[stack_ptr] = gp_regs_32[rid];
+        stack_ptr--;
+      }
 
-  public:
+      void pop_register_to_stack(RegID rid) {
+        //FIXME: MAybe validate regid here
+        if(stack_ptr >= STACK_UPPER_LIMIT) {
+          throw std::runtime_error("Stack overflow!");
+        }
+
+        gp_regs_32[rid] = memory[stack_ptr];
+        stack_ptr++;
+      }
+
+    };
+
+    using BytecodeBuffer = std::vector<uint8_t>;
+
+    // NOTE: The program can be excecuted in terms of reading byte at
+    // a time and keeping a state, interpretting subsequent bytes based
+    // on opcodes and instruction specs, this way we can keep immediate values
+    // in the bytecode.
     // NOTE: We need to figure out how we're going to store immediate values
-    void execute(std::vector<Instruction> instructions);
+    void execute(BytecodeBuffer &buffer);
 
   private:
 
-    void push_stack(RegID reg, int val);
+    RegID read_valid_regid(RegID rid) const;
+    RegID read_valid_float_regid(RegID rid) const;
+    void check_bytes_ahead(BytecodeBuffer &buffer, size_t index, size_t count) const;
+    MemPtr read_valid_mem_address(BytecodeBuffer &buffer, size_t index) const;
+    int read_valid_int_immediate_val(BytecodeBuffer &buffer, size_t index) const;
+    float read_valid_float_immediate_val(BytecodeBuffer &buffer, size_t index) const;
+
+    void push_stack(RegID reg);
     void pop_stack(RegID reg);
 
     void load(RegID reg, MemPtr ptr);
@@ -140,7 +176,12 @@ class Interpreter
 
     void cmp(RegID reg1, RegID reg2);
     void cmp_float(RegID reg1, RegID reg2);
-  } m_exec_ng;
+
+    MemoryBank m_mb;
+  };
+
+private:
+  Interpreter m_exec_ng;
 };
 
 #endif // INTERPRETER_H

@@ -8,7 +8,6 @@ enum struct MathOperator {
   NONE = 0, PLUS, MINUS, DIV, MULT
 };
 
-
 class ParseError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };

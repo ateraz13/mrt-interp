@@ -1,6 +1,8 @@
 #+title: Design notes
 
 * General ideas
+** Memory Model
++ Stack grows down, from upper bound to lower bound.
 ** Interpreter
 + Instead of translating tokens directly into instructions we can translate expressions into
   proper mathematical representation in memory but as this is an interpreter indirection might
