@@ -31,7 +31,7 @@ public:
       static const uint8_t LOAD_FLOAT = 6;
       static const uint8_t LOAD_IMMEDIATE_FLOAT = 7;
 
-      static const uint8_t STORE_MEMORY = 8;
+      static const uint8_t STORE = 8;
       static const uint8_t STORE_FLOAT = 9;
 
       static const uint8_t SHIFT_LEFT = 10;
@@ -88,10 +88,19 @@ public:
       //
       // NOTE: We can store everything in a sigle memory buffer and grow stack in one direction and heap in the other.
       // just like we do on hardware.
+      //
+      // NOTE: It might be a good idea to use virtual ROM's to store programs and
+      // when neccessary load parts of the program into the working memory.
+      //
+      // NOTE: Heap allocation will be handled by the kernel.
+      //
+      // FIXME: Memory Alignment: Most CPU's don't access memory byte at a time
+      // but rather in "words". We need a way to keep the memory accessible byte at
+      // a time but also be able to store words from and to registers quickly.
 
       std::array<uint32_t, 15> gp_regs_32; /* 15 general purpose 32-bit registers */
-      std::array<float, 15> fl_reg_32; /* 15 floating-point 32-bit registers */
-      std::array<uint32_t, MEMORY_SIZE> memory;
+      std::array<float, 15> fl_regs_32; /* 15 floating-point 32-bit registers */
+      std::array<uint8_t, MEMORY_SIZE> memory;
 
       static const RegID GP_A = 0;
       static const RegID GP_B = 1;
@@ -99,49 +108,75 @@ public:
       static const RegID GP_D = 3;
       static const RegID GP_E = 4;
       static const RegID GP_F = 5;
+      static const RegID STACK_PTR_REG = 12;
+      static const RegID PROGRAM_COUNTER_REG = 13;
       static const RegID FLAGS_REG = 14;
 
-      MemPtr stack_ptr;
-      MemPtr program_counter;
+      static const uint32_t ZERO_FLAG_BIT = (1 << 0);
+      static const uint32_t OVERFLOW_FLAG_BIT = (1 << 1);
+      static const uint32_t SIGN_FLAG_BIT = (1 << 2);
+      static const uint32_t CARRY_FLAG_BIT = (1 << 3);
 
-      void push_register_to_stack(RegID rid) {
+      void store_word();
+      void push_register_to_stack(RegID rid)
+      {
         //FIXME: MAybe validate regid here
-        if(stack_ptr <= STACK_LOWER_LIMIT) {
+        if(gp_regs_32[STACK_PTR_REG] <= STACK_LOWER_LIMIT) {
           throw std::runtime_error("Stack underflow!");
         }
-        memory[stack_ptr] = gp_regs_32[rid];
-        stack_ptr--;
+        memory[gp_regs_32[STACK_PTR_REG]] = gp_regs_32[rid];
+        gp_regs_32[STACK_PTR_REG]--;
       }
 
-      void pop_register_to_stack(RegID rid) {
+      void pop_register_to_stack(RegID rid)
+      {
         //FIXME: MAybe validate regid here
-        if(stack_ptr >= STACK_UPPER_LIMIT) {
+        if(gp_regs_32[STACK_PTR_REG]>= STACK_UPPER_LIMIT) {
           throw std::runtime_error("Stack overflow!");
         }
 
-        gp_regs_32[rid] = memory[stack_ptr];
-        stack_ptr++;
+        gp_regs_32[rid] = memory[gp_regs_32[STACK_PTR_REG]];
+        gp_regs_32[STACK_PTR_REG]++;
       }
 
+      bool check_flag(uint32_t flag_bit) const
+      {
+        return gp_regs_32[FLAGS_REG] & flag_bit;
+      }
+
+      void set_flag(uint32_t flag_bit)
+      {
+        gp_regs_32[FLAGS_REG] |= flag_bit;
+      }
+
+      void unset_flag(uint32_t flag_bit)
+      {
+        gp_regs_32[FLAGS_REG] ^= flag_bit;
+      }
     };
 
     using BytecodeBuffer = std::vector<uint8_t>;
-
     // NOTE: The program can be excecuted in terms of reading byte at
     // a time and keeping a state, interpretting subsequent bytes based
     // on opcodes and instruction specs, this way we can keep immediate values
     // in the bytecode.
     // NOTE: We need to figure out how we're going to store immediate values
-    void execute(BytecodeBuffer &buffer);
+    void load_program(BytecodeBuffer &buffer);
+    void run();
 
   private:
 
-    RegID read_valid_regid(RegID rid) const;
-    RegID read_valid_float_regid(RegID rid) const;
+    using MemoryBuffer = decltype(MemoryBank::memory);
+
+    RegID read_valid_regid(MemoryBuffer &buffer, uint32_t& pc) const;
+    RegID read_valid_float_regid(MemoryBuffer &buffer, uint32_t& pc) const;
+    MemPtr read_valid_mem_address(MemoryBuffer &buffer, uint32_t& pc) const;
+    int read_valid_int_immediate_val(MemoryBuffer &buffer, uint32_t& pc) const;
+    float read_valid_float_immediate_val(MemoryBuffer &buffer, uint32_t& pc) const;
+    MemPtr check_mem_address_with_throw(MemPtr ptr) const;
     void check_bytes_ahead(BytecodeBuffer &buffer, size_t index, size_t count) const;
-    MemPtr read_valid_mem_address(BytecodeBuffer &buffer, size_t index) const;
-    int read_valid_int_immediate_val(BytecodeBuffer &buffer, size_t index) const;
-    float read_valid_float_immediate_val(BytecodeBuffer &buffer, size_t index) const;
+    void check_jump_address(RegID regid) const;
+
 
     void push_stack(RegID reg);
     void pop_stack(RegID reg);
