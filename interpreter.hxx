@@ -174,7 +174,7 @@ public:
     int read_valid_int_immediate_val(MemoryBuffer &buffer, uint32_t& pc) const;
     float read_valid_float_immediate_val(MemoryBuffer &buffer, uint32_t& pc) const;
     MemPtr check_mem_address_with_throw(MemPtr ptr) const;
-    void check_bytes_ahead(BytecodeBuffer &buffer, size_t index, size_t count) const;
+    void check_bytes_ahead(MemoryBuffer &buffer, size_t index, size_t count) const;
     void check_jump_address(RegID regid) const;
 
 

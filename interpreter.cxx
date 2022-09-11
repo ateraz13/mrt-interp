@@ -37,7 +37,7 @@ RegID VirtualMachine::Interpreter::read_valid_float_regid(MemoryBuffer& buffer, 
 }
 
 
-MemPtr VirtualMachine::Interpreter::read_valid_mem_address(BytecodeBuffer &buffer, uint32_t& pc) const
+MemPtr VirtualMachine::Interpreter::read_valid_mem_address(MemoryBuffer &buffer, uint32_t& pc) const
 {
 
   check_bytes_ahead(buffer, pc, 4);
@@ -47,7 +47,7 @@ MemPtr VirtualMachine::Interpreter::read_valid_mem_address(BytecodeBuffer &buffe
   return mem_ptr;
 }
 
-int VirtualMachine::Interpreter::read_valid_int_immediate_val(BytecodeBuffer &buffer, uint32_t& pc) const
+int VirtualMachine::Interpreter::read_valid_int_immediate_val(MemoryBuffer &buffer, uint32_t& pc) const
 {
   check_bytes_ahead(buffer, pc, 4);
   auto res = *reinterpret_cast<int*>(&buffer[pc]);
@@ -56,19 +56,19 @@ int VirtualMachine::Interpreter::read_valid_int_immediate_val(BytecodeBuffer &bu
   return res;
 }
 
-float VirtualMachine::Interpreter::read_valid_float_immediate_val(BytecodeBuffer &buffer, uint32_t& pc) const
+float VirtualMachine::Interpreter::read_valid_float_immediate_val(MemoryBuffer &buffer, uint32_t& pc) const
 {
   check_bytes_ahead(buffer, pc, 4);
-  auto res = *reinterpret_cast<float*>(&buffer[index]);
+  auto res = *reinterpret_cast<float*>(&buffer[pc]);
 
   pc+=4;
   return res;
 }
 
-void VirtualMachine::Interpreter::check_bytes_ahead(BytecodeBuffer &buffer, size_t index, size_t count) const
+void VirtualMachine::Interpreter::check_bytes_ahead(MemoryBuffer &buffer, size_t index, size_t count) const
 {
   if(index < 0 && index+count > buffer.size()) {
-    throw std::runtime_error((boost::format("BytecodeBuffer does not have %1% bytes ahead(index: %2%).") % count % index).str());
+    throw std::runtime_error((boost::format("MemoryBuffer does not have %1% bytes ahead(index: %2%).") % count % index).str());
   }
 }
 
@@ -275,7 +275,7 @@ void VirtualMachine::Interpreter::run()
     }
     case OpCodes::JUMP_EQ:{
       RegID rid = read_valid_regid(buffer, pc);
-      jump_eq(rid);
+      jump_zero(rid);
       continue;
     }
     case OpCodes::JUMP_LT:{
@@ -363,7 +363,7 @@ void Interpreter::shift_left(RegID reg, RegID shift_by_reg, RegID dest_reg)
   m_mb.gp_regs_32[dest_reg] = m_mb.gp_regs_32[reg] <<  m_mb.gp_regs_32[shift_by_reg];
 }
 
-void Interpreter::shift_right(RegID reg1, RegID shit_by_reg2, RegID dest_reg)
+void Interpreter::shift_right(RegID reg, RegID shift_by_reg, RegID dest_reg)
 {
   m_mb.gp_regs_32[dest_reg] = m_mb.gp_regs_32[reg] >>  m_mb.gp_regs_32[shift_by_reg];
 }
@@ -438,17 +438,17 @@ void Interpreter::jump_zero(RegID regid)
 
 void Interpreter::jump_lt(RegID reg)
 {
-  check_mem_address_with_throw(m_mb.gp_regs_32[regid]);
+  check_mem_address_with_throw(m_mb.gp_regs_32[reg]);
   if(m_mb.check_flag(MemoryBank::ZERO_FLAG_BIT) || m_mb.check_flag(MemoryBank::SIGN_FLAG_BIT) != m_mb.check_flag(MemoryBank::OVERFLOW_FLAG_BIT)) {
-    jump(regid);
+    jump(reg);
   }
 }
 
 void Interpreter::jump_gt(RegID reg)
 {
-  check_mem_address_with_throw(m_mb.gp_regs_32[regid]);
+  check_mem_address_with_throw(m_mb.gp_regs_32[reg]);
   if(m_mb.check_flag(MemoryBank::ZERO_FLAG_BIT) && m_mb.check_flag(MemoryBank::SIGN_FLAG_BIT) == m_mb.check_flag(MemoryBank::OVERFLOW_FLAG_BIT)) {
-    jump(regid);
+    jump(reg);
   }
 }
 
