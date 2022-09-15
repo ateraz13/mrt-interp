@@ -15,15 +15,32 @@
 
 int main(int argc, char** argv)
 {
+  using OPC = VirtualMachine::Instruction::OpCodes;
+
+  try {
+
 
   VirtualMachine vm;
+  VirtualMachine::Interpreter::BytecodeBuffer bb {
+    OPC::LOAD_IMMEDIATE, 0x01 /* REG1 */ , 0xff, 0xff, 0xff, 0xff,
+    OPC::LOAD_IMMEDIATE_FLOAT, 0x01 /* FL_REG1 */, 0xff, 0xff, 0xff, 0xff,
+    OPC::HALT
+  };
+
+  vm.m_interp.load_program(bb);
+  vm.m_interp.run();
 
   std::cout << "Hello there!" << std::endl;
 
-  printf("Hello world!");
+  vm.m_interp.m_mb.print_registers();
+
 
   std::cout << "Press any key to exit..." << std::endl;
   getchar();
+
+  } catch ( std::runtime_error re) {
+    std::cout << "RUNTIME_ERROR: " << re.what() << std::endl;
+  }
 
   return 0;
 }

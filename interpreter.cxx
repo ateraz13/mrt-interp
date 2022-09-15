@@ -106,8 +106,15 @@ void VirtualMachine::Interpreter::run()
   auto& buffer = m_mb.memory;
   auto& pc = m_mb.gp_regs_32[MemoryBank::PROGRAM_COUNTER_REG];
 
-  for(pc = 0; pc < m_mb.memory.size(); pc++) {
-    switch (buffer[pc]) {
+  for(pc = 0; pc < m_mb.memory.size(); ) {
+
+    uint8_t instr = buffer[pc];
+    pc++;
+
+    switch (instr) {
+    case OpCodes::NOP: {
+      continue;
+    }
     case OpCodes::PUSH_STACK:{
       RegID rid = read_valid_regid(buffer, pc);
       push_stack(rid);
@@ -140,16 +147,20 @@ void VirtualMachine::Interpreter::run()
     case OpCodes::LOAD_IMMEDIATE:{
       RegID rid = read_valid_regid(buffer, pc);
       int imm = read_valid_int_immediate_val(buffer, pc);
+      load_immediate(rid, imm);
       continue;
     }
     case OpCodes::LOAD_FLOAT:{
       RegID rid = read_valid_regid(buffer, pc);
-      int imm = read_valid_float_immediate_val(buffer, pc);
+      MemPtr addr = read_valid_mem_address(buffer, pc);
+      check_mem_address_with_throw(addr);
+      load_float(rid, addr);
       continue;
     }
     case OpCodes::LOAD_IMMEDIATE_FLOAT: {
       RegID rid = read_valid_regid(buffer, pc);
       int imm = read_valid_float_immediate_val(buffer, pc);
+      load_immediate_float(rid, imm);
       continue;
     }
     case OpCodes::STORE:{
@@ -300,6 +311,9 @@ void VirtualMachine::Interpreter::run()
       cmp_float(rid1, rid2);
       continue;
     }
+    case OpCodes::HALT:{
+      return;
+    }
     default:
       throw std::runtime_error((boost::format("Invalid instruction (OPCODE: %1%, PC: %2%)") % buffer[pc] % pc).str());
     }
@@ -333,7 +347,7 @@ void Interpreter::load(RegID regid, MemPtr ptr)
   m_mb.gp_regs_32[regid] = m_mb.memory[ptr];
 }
 
-void Interpreter::load_immediate(uint32_t val, RegID regid)
+void Interpreter::load_immediate(RegID regid, uint32_t val)
 {
   m_mb.gp_regs_32[regid] = val;
 }
@@ -343,7 +357,7 @@ void Interpreter::load_float(RegID regid, MemPtr ptr)
   m_mb.fl_regs_32[regid] = m_mb.memory[ptr];
 }
 
-void Interpreter::load_immediate_float(float val, RegID regid)
+void Interpreter::load_immediate_float(RegID regid, float val)
 {
   m_mb.fl_regs_32[regid] = val;
 }

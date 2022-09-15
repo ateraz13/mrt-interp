@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstdint>
 #include <stdexcept>
+#include <iostream>
+#include <bitset>
 
 // TODO: Reorder expression tokens into mathematically accurate order.
 // NOTE: All intruction are 32-bit but the op code only occupies the first 8-bits.
@@ -18,56 +20,45 @@ public:
   {
     // NOTE: Assign instruction opcodes with specific values.
     struct OpCodes {
-
-      static const uint8_t PUSH_STACK = 0;
-      static const uint8_t POP_STACK = 1;
-
-      static const uint8_t PUSH_FLOAT_STACK = 2;
-      static const uint8_t POP_FLOAT_STACK = 3;
-
-      static const uint8_t LOAD = 4;
-      static const uint8_t LOAD_IMMEDIATE = 5;
-
-      static const uint8_t LOAD_FLOAT = 6;
-      static const uint8_t LOAD_IMMEDIATE_FLOAT = 7;
-
-      static const uint8_t STORE = 8;
-      static const uint8_t STORE_FLOAT = 9;
-
-      static const uint8_t SHIFT_LEFT = 10;
-      static const uint8_t SHIFT_RIGHT = 11;
-      static const uint8_t SHIFT_IMMEDIATE_LEFT = 12;
-      static const uint8_t SHIFT_IMMEDIATE_RIGHT = 13;
-
-      static const uint8_t ADD_INT = 14;
-      static const uint8_t SUB_INT = 15;
-      static const uint8_t DIV_INT = 16;
-      static const uint8_t MULT_INT = 17;
-
-      static const uint8_t PLUS_IMMEDIATE_INT = 18;
-      static const uint8_t MINUS_IMMEDIATE_INT = 19;
-      static const uint8_t DIV_IMMEDIATE_INT = 20;
-      static const uint8_t MULT_IMMEDIATE_INT = 21;
-
-      static const uint8_t ADD_FLOAT = 22;
-      static const uint8_t SUB_FLOAT = 23;
-      static const uint8_t DIV_FLOAT = 24;
-      static const uint8_t MULT_FLOAT = 25;
-
-      static const uint8_t PLUS_IMMEDIATE_FLOAT = 26;
-      static const uint8_t MINUS_IMMEDIATE_FLOAT = 27;
-      static const uint8_t DIV_IMMEDIATE_FLOAT = 28;
-      static const uint8_t MULT_IMMEDIATE_FLOAT = 29;
-
-      static const uint8_t JUMP = 30;
-      static const uint8_t JUMP_ZERO = 31;
-      static const uint8_t JUMP_EQ = 32;
-      static const uint8_t JUMP_LT = 33;
-      static const uint8_t JUMP_GT = 34;
-
-      static const uint8_t COMPARE = 35;
-      static const uint8_t COMPARE_FLOAT = 36;
-
+      static const uint8_t NOP = 0;
+      static const uint8_t PUSH_STACK = 1;
+      static const uint8_t POP_STACK = 2;
+      static const uint8_t PUSH_FLOAT_STACK = 3;
+      static const uint8_t POP_FLOAT_STACK = 4;
+      static const uint8_t LOAD = 5;
+      static const uint8_t LOAD_IMMEDIATE = 6;
+      static const uint8_t LOAD_FLOAT = 7;
+      static const uint8_t LOAD_IMMEDIATE_FLOAT = 8;
+      static const uint8_t STORE = 9;
+      static const uint8_t STORE_FLOAT = 10;
+      static const uint8_t SHIFT_LEFT = 11;
+      static const uint8_t SHIFT_RIGHT = 12;
+      static const uint8_t SHIFT_IMMEDIATE_LEFT = 13;
+      static const uint8_t SHIFT_IMMEDIATE_RIGHT = 14;
+      static const uint8_t ADD_INT = 15;
+      static const uint8_t SUB_INT = 16;
+      static const uint8_t DIV_INT = 17;
+      static const uint8_t MULT_INT = 18;
+      static const uint8_t PLUS_IMMEDIATE_INT = 19;
+      static const uint8_t MINUS_IMMEDIATE_INT = 20;
+      static const uint8_t DIV_IMMEDIATE_INT = 21;
+      static const uint8_t MULT_IMMEDIATE_INT = 22;
+      static const uint8_t ADD_FLOAT = 23;
+      static const uint8_t SUB_FLOAT = 24;
+      static const uint8_t DIV_FLOAT = 25;
+      static const uint8_t MULT_FLOAT = 26;
+      static const uint8_t PLUS_IMMEDIATE_FLOAT = 27;
+      static const uint8_t MINUS_IMMEDIATE_FLOAT = 28;
+      static const uint8_t DIV_IMMEDIATE_FLOAT = 29;
+      static const uint8_t MULT_IMMEDIATE_FLOAT = 30;
+      static const uint8_t JUMP = 31;
+      static const uint8_t JUMP_ZERO = 32;
+      static const uint8_t JUMP_EQ = 33;
+      static const uint8_t JUMP_LT = 34;
+      static const uint8_t JUMP_GT = 35;
+      static const uint8_t COMPARE = 36;
+      static const uint8_t COMPARE_FLOAT = 37;
+      static const uint8_t HALT = 38;
     } op_code;
 
   };
@@ -117,7 +108,15 @@ public:
       static const uint32_t SIGN_FLAG_BIT = (1 << 2);
       static const uint32_t CARRY_FLAG_BIT = (1 << 3);
 
-      void store_word();
+      MemoryBank():
+        gp_regs_32({0}),
+        fl_regs_32({0.0f}),
+        memory({0})
+      {
+        gp_regs_32[PROGRAM_COUNTER_REG] = 0;
+        gp_regs_32[STACK_PTR_REG] = STACK_UPPER_LIMIT;
+      }
+
       void push_register_to_stack(RegID rid)
       {
         //FIXME: MAybe validate regid here
@@ -153,6 +152,23 @@ public:
       {
         gp_regs_32[FLAGS_REG] ^= flag_bit;
       }
+
+      void print_registers() const 
+      {
+        for(int i = 0; i < 12; i++ ) {
+          std::cout << "REG" << i << ": " << gp_regs_32[i] << std::endl;
+        }
+
+        std::cout << "STACK_PTR: " << gp_regs_32[STACK_PTR_REG] << std::endl;
+        std::cout << "PROGRAM_COUNTER: " << gp_regs_32[PROGRAM_COUNTER_REG] << std::endl;
+        std::cout << "FLAGS: " << std::bitset<32>(gp_regs_32[PROGRAM_COUNTER_REG]) << std::endl;
+
+        std::cout << "\n";
+
+        for(int i = 0; i < 15; i++ ) {
+          std::cout << "FL_REG" << i << ": " << fl_regs_32[i] << std::endl;
+        }
+      }
     };
 
     using BytecodeBuffer = std::vector<uint8_t>;
@@ -177,16 +193,14 @@ public:
     void check_bytes_ahead(MemoryBuffer &buffer, size_t index, size_t count) const;
     void check_jump_address(RegID regid) const;
 
-
     void push_stack(RegID reg);
     void pop_stack(RegID reg);
-
     void load(RegID reg, MemPtr ptr);
     void store(RegID reg, MemPtr ptr);
-    void load_immediate(uint32_t val, RegID reg);
+    void load_immediate(RegID reg, uint32_t val);
     void store_float(RegID reg, MemPtr ptr);
     void load_float(RegID reg, MemPtr ptr);
-    void load_immediate_float(float val, RegID reg);
+    void load_immediate_float(RegID reg, float val);
 
     void shift_left(RegID reg1, RegID shit_by_reg2, RegID dest_reg);
     void shift_right(RegID reg1, RegID shit_by_reg2, RegID dest_reg);
@@ -212,11 +226,14 @@ public:
     void cmp(RegID reg1, RegID reg2);
     void cmp_float(RegID reg1, RegID reg2);
 
+    // FIXME: In the future we want to make this private
+  public:
     MemoryBank m_mb;
   };
 
-private:
-  Interpreter m_exec_ng;
+// FIXME: In the future we want to make this private
+public:
+  Interpreter m_interp;
 };
 
 #endif // INTERPRETER_H
