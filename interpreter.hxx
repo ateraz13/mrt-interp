@@ -13,7 +13,7 @@
 class VirtualMachine
 {
 public:
-  using MemPtr = uint64_t;
+  using MemPtr = uint32_t;
   using RegID = uint8_t; // Register ID
 
   struct Instruction

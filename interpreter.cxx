@@ -42,6 +42,7 @@ MemPtr VirtualMachine::Interpreter::read_valid_mem_address(MemoryBuffer &buffer,
 
   check_bytes_ahead(buffer, pc, 4);
   auto mem_ptr  = *reinterpret_cast<MemPtr*>(&buffer[pc]);
+  std::cout << "MEM ADDRESS READ: " << mem_ptr << std::endl;
 
   pc+=4;
   return mem_ptr;
@@ -159,20 +160,20 @@ void VirtualMachine::Interpreter::run()
     }
     case OpCodes::LOAD_IMMEDIATE_FLOAT: {
       RegID rid = read_valid_regid(buffer, pc);
-      int imm = read_valid_float_immediate_val(buffer, pc);
+      float imm = read_valid_float_immediate_val(buffer, pc);
       load_immediate_float(rid, imm);
       continue;
     }
     case OpCodes::STORE:{
-      MemPtr addr = read_valid_mem_address(buffer, pc);
       RegID rid = read_valid_regid(buffer, pc);
+      MemPtr addr = read_valid_mem_address(buffer, pc);
       check_mem_address_with_throw(addr);
       store(rid, addr);
       continue;
     }
     case OpCodes::STORE_FLOAT:{
-      MemPtr addr = read_valid_mem_address(buffer, pc);
       RegID rid = read_valid_regid(buffer, pc);
+      MemPtr addr = read_valid_mem_address(buffer, pc);
       check_mem_address_with_throw(addr);
       store_float(rid, addr);
       continue;
