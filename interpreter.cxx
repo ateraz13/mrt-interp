@@ -9,7 +9,7 @@ using RegID = VirtualMachine::RegID;
 using MemPtr = VirtualMachine::MemPtr;
 
 
-// NOTE: We need to check for endienness in immediate values, memory addresses etc.
+// NOTE: We need to deal with endienness in immediate values, memory addresses etc.
 
 RegID VirtualMachine::Interpreter::read_valid_regid(MemoryBuffer& buffer, uint32_t& pc) const
 {

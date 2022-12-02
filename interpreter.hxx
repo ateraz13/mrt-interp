@@ -10,15 +10,26 @@
 // TODO: Reorder expression tokens into mathematically accurate order.
 // NOTE: All intruction are 32-bit but the op code only occupies the first 8-bits.
 
+namespace tests { class InstructionTester; } 
+
 class VirtualMachine
 {
+  friend class tests::InstructionTester;
+
 public:
   using MemPtr = uint32_t;
   using RegID = uint8_t; // Register ID
 
+  void reset()
+  {
+    m_interp.reset();
+  }
+  
   struct Instruction
   {
     // NOTE: Assign instruction opcodes with specific values.
+    // TODO: We might need byte, half world operations as well,
+    // so far we only have word operations
     struct OpCodes {
       static const uint8_t NOP = 0;
       static const uint8_t PUSH_STACK = 1;
@@ -66,6 +77,12 @@ public:
 public:
   struct Interpreter
   {
+
+    void reset() 
+    {
+      m_mb.clear();
+    }
+
     struct MemoryBank
     {
     public:
@@ -115,6 +132,15 @@ public:
       {
         gp_regs_32[PROGRAM_COUNTER_REG] = 0;
         gp_regs_32[STACK_PTR_REG] = STACK_UPPER_LIMIT;
+      }
+
+      void clear() 
+      {
+        std::fill(gp_regs_32.begin(), gp_regs_32.end(), 0);
+        std::fill(fl_regs_32.begin(), fl_regs_32.end(), 0);
+        fl_regs_32[PROGRAM_COUNTER_REG] = 0;
+        gp_regs_32[STACK_PTR_REG] = STACK_UPPER_LIMIT;
+        std::fill(memory.begin(), memory.end(), 0);
       }
 
       void push_register_to_stack(RegID rid)
