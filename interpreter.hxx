@@ -1,113 +1,72 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 #include <array>
-#include <vector>
-#include <cstdint>
-#include <stdexcept>
-#include <iostream>
 #include <bitset>
+#include <cstdint>
+#include <iostream>
+#include <stdexcept>
+#include <vector>
 
 // TODO: Reorder expression tokens into mathematically accurate order.
-// NOTE: All intruction are 32-bit but the op code only occupies the first 8-bits.
+// NOTE: All intruction are 32-bit but the op code only occupies the first
+// 8-bits.
 
-namespace tests { class InstructionTester; } 
+namespace tests {
+class InstructionTester;
+}
 
-class VirtualMachine
-{
+class VirtualMachine {
   friend class tests::InstructionTester;
 
 public:
   using MemPtr = uint32_t;
   using RegID = uint8_t; // Register ID
 
-  void reset()
-  {
-    m_interp.reset();
-  }
-  
-  struct Instruction
-  {
-    // NOTE: Assign instruction opcodes with specific values.
-    // TODO: We might need byte, half world operations as well,
-    // so far we only have word operations
-    struct OpCodes {
-      static const uint8_t NOP = 0;
-      static const uint8_t PUSH_STACK = 1;
-      static const uint8_t POP_STACK = 2;
-      static const uint8_t PUSH_FLOAT_STACK = 3;
-      static const uint8_t POP_FLOAT_STACK = 4;
-      static const uint8_t LOAD = 5;
-      static const uint8_t LOAD_IMMEDIATE = 6;
-      static const uint8_t LOAD_FLOAT = 7;
-      static const uint8_t LOAD_IMMEDIATE_FLOAT = 8;
-      static const uint8_t STORE = 9;
-      static const uint8_t STORE_FLOAT = 10;
-      static const uint8_t SHIFT_LEFT = 11;
-      static const uint8_t SHIFT_RIGHT = 12;
-      static const uint8_t SHIFT_IMMEDIATE_LEFT = 13;
-      static const uint8_t SHIFT_IMMEDIATE_RIGHT = 14;
-      static const uint8_t ADD_INT = 15;
-      static const uint8_t SUB_INT = 16;
-      static const uint8_t DIV_INT = 17;
-      static const uint8_t MULT_INT = 18;
-      static const uint8_t PLUS_IMMEDIATE_INT = 19;
-      static const uint8_t MINUS_IMMEDIATE_INT = 20;
-      static const uint8_t DIV_IMMEDIATE_INT = 21;
-      static const uint8_t MULT_IMMEDIATE_INT = 22;
-      static const uint8_t ADD_FLOAT = 23;
-      static const uint8_t SUB_FLOAT = 24;
-      static const uint8_t DIV_FLOAT = 25;
-      static const uint8_t MULT_FLOAT = 26;
-      static const uint8_t PLUS_IMMEDIATE_FLOAT = 27;
-      static const uint8_t MINUS_IMMEDIATE_FLOAT = 28;
-      static const uint8_t DIV_IMMEDIATE_FLOAT = 29;
-      static const uint8_t MULT_IMMEDIATE_FLOAT = 30;
-      static const uint8_t JUMP = 31;
-      static const uint8_t JUMP_ZERO = 32;
-      static const uint8_t JUMP_EQ = 33;
-      static const uint8_t JUMP_LT = 34;
-      static const uint8_t JUMP_GT = 35;
-      static const uint8_t COMPARE = 36;
-      static const uint8_t COMPARE_FLOAT = 37;
-      static const uint8_t HALT = 38;
-    } op_code;
+  void reset() { m_interp.reset(); }
 
+  struct Instruction {
+// NOTE: Assign instruction opcodes with specific values.
+// TODO: We might need byte, half world operations as well,
+// so far we only have word operations
+#include "instructions.hxx"
   };
 
 public:
-  struct Interpreter
-  {
+  struct Interpreter {
+    void reset() { m_mb.clear(); }
 
-    void reset() 
-    {
-      m_mb.clear();
-    }
-
-    struct MemoryBank
-    {
+    struct MemoryBank {
     public:
-      constexpr static uint64_t MEMORY_SIZE = 64*1024; // 64 kilobytes
+      constexpr static uint64_t MEMORY_SIZE = 64 * 1024; // 64 kilobytes
       // NOTE: Stack grows down
       constexpr static uint64_t STACK_LOWER_LIMIT = 0; // 64 kilobytes
-      constexpr static uint64_t STACK_UPPER_LIMIT = MEMORY_SIZE/2; // 64 kilobytes
+      constexpr static uint64_t STACK_UPPER_LIMIT =
+          MEMORY_SIZE / 2; // 64 kilobytes
 
-      // NOTE: It might be a good idea to store memory buffers as uint32_t and values in aligned
-      // memory for performance puposes but for now it is unnecessary.
+      // NOTE: It might be a good idea to store memory buffers as uint32_t and
+      // values in aligned memory for performance puposes but for now it is
+      // unnecessary.
       //
-      // NOTE: We can store everything in a sigle memory buffer and grow stack in one direction and heap in the other.
-      // just like we do on hardware.
+      // NOTE: We can store everything in a sigle memory buffer and grow stack
+      // in one direction and heap in the other. just like we do on hardware.
       //
-      // NOTE: It might be a good idea to use virtual ROM's to store programs and
-      // when neccessary load parts of the program into the working memory.
+      // NOTE: It might be a good idea to use virtual ROM's to store programs
+      // and when neccessary load parts of the program into the working memory.
       //
       // NOTE: Heap allocation will be handled by the kernel.
       //
       // FIXME: Memory Alignment: Most CPU's don't access memory byte at a time
-      // but rather in "words". We need a way to keep the memory accessible byte at
-      // a time but also be able to store words from and to registers quickly.
+      // but rather in "words". We need a way to keep the memory accessible byte
+      // at a time but also be able to store words from and to registers
+      // quickly.
 
-      std::array<uint32_t, 15> gp_regs_32; /* 15 general purpose 32-bit registers */
-      std::array<float, 15> fl_regs_32; /* 15 floating-point 32-bit registers */
+      const static uint32_t GP_REGS_32_COUNT = 16;
+      const static uint32_t FL_REGS_32_COUNT = 16;
+
+      std::array<uint32_t, GP_REGS_32_COUNT>
+          gp_regs_32; /* 15 general purpose 32-bit registers */
+      std::array<float, FL_REGS_32_COUNT>
+          fl_regs_32; /* 15 floating-point 32-bit registers */
       std::array<uint8_t, MEMORY_SIZE> memory;
 
       static const RegID GP_A = 0;
@@ -125,17 +84,12 @@ public:
       static const uint32_t SIGN_FLAG_BIT = (1 << 2);
       static const uint32_t CARRY_FLAG_BIT = (1 << 3);
 
-      MemoryBank():
-        gp_regs_32({0}),
-        fl_regs_32({0.0f}),
-        memory({0})
-      {
+      MemoryBank() : gp_regs_32({0}), fl_regs_32({0.0f}), memory({0}) {
         gp_regs_32[PROGRAM_COUNTER_REG] = 0;
         gp_regs_32[STACK_PTR_REG] = STACK_UPPER_LIMIT;
       }
 
-      void clear() 
-      {
+      void clear() {
         std::fill(gp_regs_32.begin(), gp_regs_32.end(), 0);
         std::fill(fl_regs_32.begin(), fl_regs_32.end(), 0);
         fl_regs_32[PROGRAM_COUNTER_REG] = 0;
@@ -143,20 +97,18 @@ public:
         std::fill(memory.begin(), memory.end(), 0);
       }
 
-      void push_register_to_stack(RegID rid)
-      {
-        //FIXME: MAybe validate regid here
-        if(gp_regs_32[STACK_PTR_REG] <= STACK_LOWER_LIMIT) {
+      void push_register_to_stack(RegID rid) {
+        // FIXME: MAybe validate regid here
+        if (gp_regs_32[STACK_PTR_REG] <= STACK_LOWER_LIMIT) {
           throw std::runtime_error("Stack underflow!");
         }
         memory[gp_regs_32[STACK_PTR_REG]] = gp_regs_32[rid];
         gp_regs_32[STACK_PTR_REG]--;
       }
 
-      void pop_register_to_stack(RegID rid)
-      {
-        //FIXME: MAybe validate regid here
-        if(gp_regs_32[STACK_PTR_REG]>= STACK_UPPER_LIMIT) {
+      void pop_register_to_stack(RegID rid) {
+        // FIXME: MAybe validate regid here
+        if (gp_regs_32[STACK_PTR_REG] >= STACK_UPPER_LIMIT) {
           throw std::runtime_error("Stack overflow!");
         }
 
@@ -164,34 +116,29 @@ public:
         gp_regs_32[STACK_PTR_REG]++;
       }
 
-      bool check_flag(uint32_t flag_bit) const
-      {
+      bool check_flag(uint32_t flag_bit) const {
         return gp_regs_32[FLAGS_REG] & flag_bit;
       }
 
-      void set_flag(uint32_t flag_bit)
-      {
-        gp_regs_32[FLAGS_REG] |= flag_bit;
-      }
+      void set_flag(uint32_t flag_bit) { gp_regs_32[FLAGS_REG] |= flag_bit; }
 
-      void unset_flag(uint32_t flag_bit)
-      {
-        gp_regs_32[FLAGS_REG] ^= flag_bit;
-      }
+      void unset_flag(uint32_t flag_bit) { gp_regs_32[FLAGS_REG] ^= flag_bit; }
 
-      void print_registers() const 
-      {
-        for(int i = 0; i < 12; i++ ) {
+      void print_registers() const {
+        for (uint32_t i = 0; i < GP_REGS_32_COUNT; i++) {
           std::cout << "REG" << i << ": " << gp_regs_32[i] << std::endl;
         }
 
         std::cout << "STACK_PTR: " << gp_regs_32[STACK_PTR_REG] << std::endl;
-        std::cout << "PROGRAM_COUNTER: " << gp_regs_32[PROGRAM_COUNTER_REG] << std::endl;
-        std::cout << "FLAGS: " << std::bitset<32>(gp_regs_32[PROGRAM_COUNTER_REG]) << std::endl;
+        std::cout << "PROGRAM_COUNTER: " << gp_regs_32[PROGRAM_COUNTER_REG]
+                  << std::endl;
+        std::cout << "FLAGS: "
+                  << std::bitset<32>(gp_regs_32[PROGRAM_COUNTER_REG])
+                  << std::endl;
 
         std::cout << "\n";
 
-        for(int i = 0; i < 15; i++ ) {
+        for (uint32_t i = 0; i < FL_REGS_32_COUNT; i++) {
           std::cout << "FL_REG" << i << ": " << fl_regs_32[i] << std::endl;
         }
       }
@@ -207,16 +154,17 @@ public:
     void run();
 
   private:
-
     using MemoryBuffer = decltype(MemoryBank::memory);
 
-    RegID read_valid_regid(MemoryBuffer &buffer, uint32_t& pc) const;
-    RegID read_valid_float_regid(MemoryBuffer &buffer, uint32_t& pc) const;
-    MemPtr read_valid_mem_address(MemoryBuffer &buffer, uint32_t& pc) const;
-    int read_valid_int_immediate_val(MemoryBuffer &buffer, uint32_t& pc) const;
-    float read_valid_float_immediate_val(MemoryBuffer &buffer, uint32_t& pc) const;
+    RegID read_valid_regid(MemoryBuffer &buffer, uint32_t &pc) const;
+    RegID read_valid_float_regid(MemoryBuffer &buffer, uint32_t &pc) const;
+    MemPtr read_valid_mem_address(MemoryBuffer &buffer, uint32_t &pc) const;
+    int read_valid_int_immediate_val(MemoryBuffer &buffer, uint32_t &pc) const;
+    float read_valid_float_immediate_val(MemoryBuffer &buffer,
+                                         uint32_t &pc) const;
     MemPtr check_mem_address_with_throw(MemPtr ptr) const;
-    void check_bytes_ahead(MemoryBuffer &buffer, size_t index, size_t count) const;
+    void check_bytes_ahead(MemoryBuffer &buffer, size_t index,
+                           size_t count) const;
     void check_jump_address(RegID regid) const;
 
     void push_stack(RegID reg);
@@ -257,7 +205,7 @@ public:
     MemoryBank m_mb;
   };
 
-// FIXME: In the future we want to make this private
+  // FIXME: In the future we want to make this private
 public:
   Interpreter m_interp;
 };

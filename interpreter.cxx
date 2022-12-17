@@ -7,16 +7,24 @@
 using OpCodes = VirtualMachine::Instruction::OpCodes;
 using RegID = VirtualMachine::RegID;
 using MemPtr = VirtualMachine::MemPtr;
-
+using MemoryBank = VirtualMachine::Interpreter::MemoryBank;
 
 // NOTE: We need to deal with endienness in immediate values, memory addresses etc.
+
+// FIXME: This function does nothing since it was writen on x86 system.
+// On big-endian systems it needs to switch the bytes around to match the systems
+// endianness since the vm stores numbers in little-endian format.
+int32_t vm_to_host_number(int32_t n)
+{
+  return n;
+}
 
 RegID VirtualMachine::Interpreter::read_valid_regid(MemoryBuffer& buffer, uint32_t& pc) const
 {
 
   uint8_t rid = buffer[pc];
 
-  if(rid < 0 && rid > 15) {
+  if(rid < 0 && rid > MemoryBank::GP_REGS_32_COUNT) {
     throw std::runtime_error((boost::format("Invalid Register ID: %1%") % rid).str());
   }
 
@@ -28,7 +36,7 @@ RegID VirtualMachine::Interpreter::read_valid_float_regid(MemoryBuffer& buffer, 
 {
   uint8_t rid = buffer[pc];
 
-  if(rid < 0 && rid > 15) {
+  if(rid < 0 && rid > MemoryBank::FL_REGS_32_COUNT) {
     throw std::runtime_error((boost::format("Invalid Float Register ID: %1%") % rid).str());
   }
 
@@ -42,16 +50,17 @@ MemPtr VirtualMachine::Interpreter::read_valid_mem_address(MemoryBuffer &buffer,
 
   check_bytes_ahead(buffer, pc, 4);
   auto mem_ptr  = *reinterpret_cast<MemPtr*>(&buffer[pc]);
-  std::cout << "MEM ADDRESS READ: " << mem_ptr << std::endl;
+  // std::cout << "MEM ADDRESS READ: " << mem_ptr << std::endl;
 
   pc+=4;
   return mem_ptr;
 }
 
-int VirtualMachine::Interpreter::read_valid_int_immediate_val(MemoryBuffer &buffer, uint32_t& pc) const
+int32_t VirtualMachine::Interpreter::read_valid_int_immediate_val(MemoryBuffer &buffer, uint32_t& pc) const
 {
+  // FIXME: This was written on x86 machine
   check_bytes_ahead(buffer, pc, 4);
-  auto res = *reinterpret_cast<int*>(&buffer[pc]);
+  int32_t res = vm_to_host_number(*reinterpret_cast<int*>(&buffer[pc]));
 
   pc+=4;
   return res;
@@ -101,9 +110,8 @@ void VirtualMachine::Interpreter::run()
   // NOTE: Program can be loaded to the address 0 in VM memory.
   // NOTE: When we stamble upon a invalid instruction we can raise an interrupt to handle the error.
   // NOTE: Maybe we want a bootloader in order to load a kernel as well as some standard boot process.
-  // FIXME: The memory buffer is used as storage for the program and we are accessing the memory
-  // to retrieve instructions, we're not using a bytecode buffers.
-
+  // FIXME: The program is loaded into memory, we're not using bytecode buffers. They are only temporary storage
+  // used to store instructions before they are passed to the interpreter.
   auto& buffer = m_mb.memory;
   auto& pc = m_mb.gp_regs_32[MemoryBank::PROGRAM_COUNTER_REG];
 
@@ -313,6 +321,7 @@ void VirtualMachine::Interpreter::run()
       continue;
     }
     case OpCodes::HALT:{
+      std::cout << "Halting the machine!\n";
       return;
     }
     default:

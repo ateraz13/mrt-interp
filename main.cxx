@@ -9,9 +9,38 @@
 #include "syntax.hxx"
 #include "interpreter.hxx"
 
-// NOTE: Instruction can be stored as a function pointers in an associative
-// array and excecuted there after by indexing into the array
-// and calling the function the pointer is pointing to.
+/*/ NOTE: Instruction can be stored as a function pointers in an associative
+*** array and excecuted there after by indexing into the array
+*** and calling the function the pointer is pointing to.
+***
+*** TODO: Write dissassebler to analyze memory contents better.
+***  When we analyze instructions in memory they are printed out as raw bytes,
+***  we need an dissasable to make it easier for us to analyze the code.
+***
+*** TODO: Implement BytecodeBuffer builder class.
+*** + We want code generator functions
+*** + It doen't neccerraly have to be a seperate class from BytecodeBuffer,
+***   because we may want to refill the buffer with different intructions
+***   several times.
+*** + Example:
+***      bbb.begin()
+***         .instructions(
+***             {
+***                Some bytecode ...
+***             }
+***         )
+***         .gen_function(
+***            []() {
+***               Generate some bytecode ...
+***            }
+***          )
+***         .instructions(
+***             []() {
+***                Some more instructions ...
+***             }
+***         )
+***         .end();
+/*/
 
 int main(int argc, char** argv)
 {
