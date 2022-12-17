@@ -94,7 +94,7 @@ hw("uint8_t opcode = mem[pc];\n\n")
 hw("switch (opcode) {\n")
 
 for i in data["instructions"]:
-    hw("case " + i + ":\n")
+    hw("case " + i + ": {\n")
     instruction = data["instructions"][i]
     for arg_name in instruction["args"]:
         arg_type = instruction["args"][arg_name]
@@ -103,10 +103,10 @@ for i in data["instructions"]:
     for arg_name in instruction["args"]:
         hw(", " + arg_name)
 
-    hw(");\nbreak;\n")
+    hw(");\nbreak;\n}\n")
 
-hw("} // switch statement \ņ")
-hw("} // run_next_instruction \n\n")
+hw("} // switch statement ")
+hw("\n}// run_next_instruction \n\n")
 
 hw("#endif //INSTRUCTIONS_HXX")
 header_file.flush()
