@@ -90,7 +90,7 @@ hw("void run_next_instruction (VirtualMachine &vm) {\n")
 hw("using MemBank = VirtualMachine::Interpreter::MemoryBank;\n")
 hw("auto& pc = vm.m_interp.m_mb[MemBank::PROGRAM_COUNTER_REG];\n")
 hw("auto& mem = vm.m_interp.m_mb.memory;\n")
-hw("uint8_t opcode = mem[pc];\n\n")
+hw("uint8_t opcode = mem[pc++];\n\n")
 hw("switch (opcode) {\n")
 
 for i in data["instructions"]:
@@ -99,6 +99,7 @@ for i in data["instructions"]:
     for arg_name in instruction["args"]:
         arg_type = instruction["args"][arg_name]
         hw(parameter_data_types[arg_type] + " " + arg_name + " = " + parse_functions[arg_type] + "(mem, pc);\n")
+        hw("pc += sizeof(" + parameter_data_types[arg_type] + ");")
     hw(instruction["keyword"] + "_cb(vm")
     for arg_name in instruction["args"]:
         hw(", " + arg_name)
