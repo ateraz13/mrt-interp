@@ -9,7 +9,20 @@ data_json_filename = "./instructions.json"
 data = json.load(open(data_json_filename, "r"))
 header_file = open(header_filename, "w")
 
-hw = hw
+parameter_data_types = {
+    "reg" : "RegID",
+    "fl_reg" : "FL_RegID",
+    "addr" : "MemPtr",
+    "u8" :  "uint8_t",
+    "u16" : "uint16_t",
+    "u32" : "uint32_t",
+    "i8" : "int8_t",
+    "i16" : "int16_t",
+    "i32" : "int32_t",
+    "float" : "float"
+}
+
+hw = header_file.write
 
 idx = 0
 hw("#ifndef INSTRUCTIONS_HXX\n")
@@ -37,11 +50,14 @@ hw("namespace callbacks {\n\n")
 
 for i in data["instructions"]:
     keyword = data["instructions"][i]["keyword"]
-    hw("void " + keyword + "_cb" + "( VirtualMachine* vm")
-    for a in data["instructions"][i]["args"]:
-        match arg
+    hw("\tvoid " + keyword + "_cb" + "( VirtualMachine* vm")
+    for arg_name in data["instructions"][i]["args"].keys():
+        arg_type = data["instructions"][i]["args"][arg_name]
+        hw(", " + parameter_data_types[arg_type] + " " + arg_name)
 
+    hw(");\n\n")
 
+hw("}\n\n")
 
 hw("#endif //INSTRUCTIONS_HXX")
 header_file.flush()

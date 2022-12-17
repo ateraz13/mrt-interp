@@ -6,324 +6,324 @@
         "u8" :  "Unsigned byte value: AKA: BYTE",
         "u16" :  "Unsigned byte value aka: HALF WORD",
         "u32" : "Unsigned integer value aka: WORD",
-        "u8" :  "Unsigned byte value: AKA: SIGNED BYTE",
-        "u16" :  "Unsigned byte value aka: SIGNED HALF WORD",
-        "u32" : "Unsigned integer value aka: SIGNED WORD",
+        "i8" :  "Signed byte value: AKA: SIGNED BYTE",
+        "i16" :  "Signed byte value aka: SIGNED HALF WORD",
+        "i32" : "Signed integer value aka: SIGNED WORD",
         "float" : "Floating-point value"
     },
     "instructions" : {
         "NOP" : {
             "keyword" : "nop",
-            "args" : []
+            "args" : {}
         },
         "PUSH_STACK" : {
             "keyword" : "push",
-            "args" : [
-                {"source" : "reg"}
-            ]
+            "args" : {
+                "source" : "reg"
+            }
         },
         "POP_STACK" : {
             "keyword" : "pop",
-            "args" : [
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "destination" : "reg"
+            }
         },
         "PUSH_FLOAT_STACK" : {
             "keyword" : "push_fl",
-            "args" : [
-                {"source" : "reg"}
-            ]
+            "args" : {
+                "source" : "reg"
+            }
         },
         "POP_FLOAT_STACK" : {
             "keyword" : "push_fl",
-            "args" : [
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "destination" : "reg"
+            }
         },
         "LOAD" : {
             "keyword" : "ld",
-            "args" : [
-                {"source" : "addr"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source" : "addr",
+                "destination" : "reg"
+            }
         },
         "LOAD_BYTE" : {
             "keyword" : "lb",
-            "args" : [
-                {"source" : "addr"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source" : "addr",
+                "destination" : "reg"
+            }
         },
         "LOAD_HALF_WORD" : {
             "keyword" : "lhw",
-            "args" : [
-                {"source" : "addr"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source" : "addr",
+                "destination" : "reg"
+            }
         },
         "LOAD_BYTE_IMMEDIATE" : {
             "keyword" : "lbi",
-            "args" : [
-                {"source" : "addr"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source" : "addr",
+                "destination" : "reg"
+            }
         },
         "LOAD_IMMEDIATE" : {
             "keyword" : "ldi",
-            "args" : [
-                {"immediate_value" : "u32"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "immediate_value" : "u32",
+                "destination" : "reg"
+            }
         },
         "LOAD_FLOAT" : {
             "keyword" : "lf",
-            "args" : [
-                {"source" : "addr"},
-                {"destination" : "fl_reg"}
-            ]
+            "args" : {
+                "source" : "addr",
+                "destination" : "fl_reg"
+            }
         },
         "LOAD_IMMEDIATE_FLOAT" : {
             "keyword" : "lfi",
-            "args" : [
-                {"immediate_value" : "float"},
-                {"destination" : "fl_reg"}
-            ]
+            "args" : {
+                "immediate_value" : "float",
+                "destination" : "fl_reg"
+            }
         },
         "STORE" : {
             "keyword" : "st",
-            "args" : [
-                {"source" : "reg"},
-                {"destination" : "addr"}
-            ]
+            "args" : {
+                "source" : "reg",
+                "destination" : "addr"
+            }
         },
         "STORE_BYTE" : {
             "keyword" : "sb",
-            "args" : [
-                {"source" : "reg"},
-                {"destination" : "addr"}
-            ]
+            "args" : {
+                "source" : "reg",
+                "destination" : "addr"
+            }
         },
         "STORE_HALF_WORD" : {
             "keyword" : "shw",
-            "args" : [
-                {"source" : "reg"},
-                {"destination" : "addr"}
-            ]
+            "args" : {
+                "source" : "reg",
+                "destination" : "addr"
+            }
         },
         "STORE_FLOAT" : {
             "keyword" : "sf",
-            "args" : [
-                {"source" : "fl_reg"},
-                {"destination" : "addr"}
-            ]
+            "args" : {
+                "source" : "fl_reg",
+                "destination" : "addr"
+            }
         },
         "SHIFT_LEFT" : {
             "keyword" : "sll",
-            "args" : [
-                {"source" : "reg"},
-                {"shift_by" : "reg"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source" : "reg",
+                "shift_by" : "reg",
+                "destination" : "reg"
+            }
         },
         "SHIFT_RIGHT" : {
             "keyword" : "srl",
-            "args" : [
-                {"source" : "reg"},
-                {"shift_by" : "reg"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source" : "reg",
+                "shift_by" : "reg",
+                "destination" : "reg"
+            }
         },
         "SHIFT_IMMEDIATE_LEFT" : {
             "keyword" : "slli",
-            "args" : [
-                {"source" : "reg"},
-                {"shift_by" : "u32"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source" : "reg",
+                "shift_by" : "u32",
+                "destination" : "reg"
+            }
         },
         "SHIFT_IMMEDIATE_RIGHT" : {
             "keyword" : "srli",
-            "args" : [
-                {"source" : "reg"},
-                {"shift_by" : "u32"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source" : "reg",
+                "shift_by" : "u32",
+                "destination" : "reg"
+            }
         },
         "ADD_INT" : {
             "keyword" : "add",
-            "args" : [
-                {"source1" : "reg"},
-                {"source2" : "reg"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source1" : "reg",
+                "source2" : "reg",
+                "destination" : "reg"
+            }
         },
         "SUB_INT" : {
             "keyword" : "sub",
-            "args" : [
-                {"source1" : "reg"},
-                {"source2" : "reg"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source1" : "reg",
+                "source2" : "reg",
+                "destination" : "reg"
+            }
         },
         "DIV_INT" : {
             "keyword" : "div",
-            "args" : [
-                {"source1" : "reg"},
-                {"source2" : "reg"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source1" : "reg",
+                "source2" : "reg",
+                "destination" : "reg"
+            }
         },
         "MULT_INT" : {
             "keyword" : "mul",
-            "args" : [
-                {"source1" : "reg"},
-                {"source2" : "reg"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source1" : "reg",
+                "source2" : "reg",
+                "destination" : "reg"
+            }
         },
         "ADD_IMMEDIATE_INT" : {
             "keyword" : "addi",
-            "args" : [
-                {"source1" : "reg"},
-                {"immediate_value" : "i32"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "i32",
+                "destination" : "reg"
+            }
         },
         "SUB_IMMEDIATE_INT" : {
             "keyword" : "subi",
-            "args" : [
-                {"source1" : "reg"},
-                {"immediate_value" : "i32"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "i32",
+                "destination" : "reg"
+            }
         },
         "DIV_IMMEDIATE_INT" : {
             "keyword" : "divi",
-            "args" : [
-                {"source1" : "reg"},
-                {"immediate_value" : "i32"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "i32",
+                "destination" : "reg"
+            }
         },
         "MULT_IMMEDIATE_INT" : {
             "keyword" : "muli",
-            "args" : [
-                {"source1" : "reg"},
-                {"immediate_value" : "i32"},
-                {"destination" : "reg"}
-            ]
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "i32",
+                "destination" : "reg"
+            }
         },
         "ADD_FLOAT" : {
             "keyword" : "addf",
-            "args" : [
-                {"source1" : "fl_reg"},
-                {"source2" : "fl_reg"},
-                {"destination" : "fl_reg"}
-            ]
+            "args" : {
+                "source1" : "fl_reg",
+                "source2" : "fl_reg",
+                "destination" : "fl_reg"
+            }
         },
         "SUB_FLOAT" : {
             "keyword" : "subf",
-            "args" : [
-                {"source1" : "fl_reg"},
-                {"source2" : "fl_reg"},
-                {"destination" : "fl_reg"}
-            ]
+            "args" : {
+                "source1" : "fl_reg",
+                "source2" : "fl_reg",
+                "destination" : "fl_reg"
+            }
         },
         "DIV_FLOAT" : {
             "keyword" : "divf",
-            "args" : [
-                {"source1" : "fl_reg"},
-                {"source2" : "fl_reg"},
-                {"destination" : "fl_reg"}
-            ]
+            "args" : {
+                "source1" : "fl_reg",
+                "source2" : "fl_reg",
+                "destination" : "fl_reg"
+            }
         },
         "MULT_FLOAT" : {
             "keyword" : "mulf",
-            "args" : [
-                    {"source1" : "fl_reg"},
-                    {"source2" : "fl_reg"},
-                    {"destination" : "fl_reg"}
-                ]
+            "args" : {
+                    "source1" : "fl_reg",
+                    "source2" : "fl_reg",
+                    "destination" : "fl_reg"
+                }
             },
             "ADD_IMMEDIATE_FLOAT" : {
                 "keyword" : "addf",
-                "args" : [
-                    {"source1" : "reg"},
-                    {"immediate_value" : "float"},
-                    {"destination" : "reg"}
-                ]
+                "args" : {
+                    "source1" : "reg",
+                    "immediate_value" : "float",
+                    "destination" : "reg"
+                }
             },
             "SUB_IMMEDIATE_FLOAT" : {
                 "keyword" : "subf",
-                "args" : [
-                    {"source1" : "reg"},
-                    {"immediate_value" : "float"},
-                    {"destination" : "reg"}
-                ]
+                "args" : {
+                    "source1" : "reg",
+                    "immediate_value" : "float",
+                    "destination" : "reg"
+                }
             },
             "DIV_IMMEDIATE_FLOAT" : {
                 "keyword" : "divf",
-                "args" : [
-                    {"source1" : "reg"},
-                    {"immediate_value" : "float"},
-                    {"destination" : "reg"}
-                ]
+                "args" : {
+                    "source1" : "reg",
+                    "immediate_value" : "float",
+                    "destination" : "reg"
+                }
             },
             "MULT_IMMEDIATE_FLOAT" : {
                 "keyword" : "mulf",
-                "args" : [
-                    {"source1" : "reg"},
-                    {"immediate_value" : "float"},
-                    {"destination" : "reg"}
-                ]
+                "args" : {
+                    "source1" : "reg",
+                    "immediate_value" : "float",
+                    "destination" : "reg"
+                }
             },
             "JUMP" : {
                 "keyword" : "jmp",
-                "args" : [
-                    {"jump_address" : "addr"}
-                ]
+                "args" : {
+                    "jump_address" : "addr"
+                }
             },
             "JUMP_ZERO" : {
                 "keyword" : "jz",
-                "args" : [
-                    {"jump_address" : "addr"}
-                ]
+                "args" : {
+                    "jump_address" : "addr"
+                }
             },
             "JUMP_EQ" : {
                 "keyword" : "je",
-                "args" : [
-                    {"jump_address" : "addr"}
-                ]
+                "args" : {
+                    "jump_address" : "addr"
+                }
             },
             "JUMP_LT" : {
                 "keyword" : "jlt",
-                "args" : [
-                    {"jump_address" : "addr"}
-                ]
+                "args" : {
+                    "jump_address" : "addr"
+                }
             },
             "JUMP_GT" : {
                 "keyword" : "jgt",
-                "args" : [
-                    {"jump_address" : "addr"}
-                ]
+                "args" : {
+                    "jump_address" : "addr"
+                }
             },
             "COMPARE" : {
                 "keyword" : "cmp",
-                "args" : [
-                    {"register1" : "reg"},
-                    {"register2" : "reg"}
-                ]
+                "args" : {
+                    "register1" : "reg",
+                    "register2" : "reg"
+                }
             },
             "COMPARE_FLOAT" : {
                 "keyword" : "cmpf",
-                "args" : [
-                    {"register1" : "fl_reg"},
-                    {"register2" : "fl_reg"}
-                ]
+                "args" : {
+                    "register1" : "fl_reg",
+                    "register2" : "fl_reg"
+                }
             },
             "HALT" : {
                 "keyword" : "halt",
-                "args" : []
+                "args" : {}
             }
         }
     }
