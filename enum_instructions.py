@@ -75,7 +75,7 @@ hw("namespace callbacks {\n\n")
 
 for i in data["instructions"]:
     keyword = data["instructions"][i]["keyword"]
-    hw("\tvoid " + keyword + "_cb" + "( VirtualMachine& vm")
+    hw("\tvoid " + keyword + "_cb" + "(Interpreter& vm")
     for arg_name in data["instructions"][i]["args"].keys():
         arg_type = data["instructions"][i]["args"][arg_name]
         hw(", " + parameter_data_types[arg_type] + " " + arg_name)
@@ -87,11 +87,10 @@ hw("}\n\n")
 ## Generate function that parses and executes the next instruction
 
 run_next_instruction_code = """
-void run_next_instruction (VirtualMachine &vm) {
-   using MemBank = VirtualMachine::Interpreter::MemoryBank;
+void run_next_instruction (Interpreter &interp) {
 
-   auto& pc = vm.m_interp.m_mb[MemBank::PROGRAM_COUNTER_REG];
-   auto& mem = vm.m_interp.m_mb.memory;
+   auto& pc = interp.m_mb.gp_regs_32[MemoryBank::PROGRAM_COUNTER_REG];
+   auto& mem = interp.m_mb.memory;
 
    uint8_t opcode = mem[pc++];
 
@@ -111,13 +110,13 @@ void run_next_instruction (VirtualMachine &vm) {
 switch_cases_code = ""
 
 for i in data["instructions"]:
-    switch_cases_code += ("case " + i + ": {\n")
+    switch_cases_code += ("case OpCodes::" + i + ": {\n")
     instruction = data["instructions"][i]
     for arg_name in instruction["args"]:
         arg_type = instruction["args"][arg_name]
         switch_cases_code += (parameter_data_types[arg_type] + " " + arg_name + " = " + parse_functions[arg_type] + "(mem, pc);\n")
         switch_cases_code += ("pc += sizeof(" + parameter_data_types[arg_type] + ");")
-    switch_cases_code += (instruction["keyword"] + "_cb(vm")
+    switch_cases_code += ("callbacks::" + instruction["keyword"] + "_cb(interp")
     for arg_name in instruction["args"]:
         switch_cases_code += (", " + arg_name)
 
