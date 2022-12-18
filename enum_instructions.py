@@ -2,6 +2,7 @@ import os
 import json
 import subprocess
 
+## FIXME: Use formating strings to make the templates more readable.
 
 header_filename = "./instructions.hxx"
 data_json_filename = "./instructions.json"
@@ -26,12 +27,12 @@ parse_functions = {
     "reg" : "read_valid_regid",
     "fl_reg" : "read_valid_float_regid",
     "addr" : "read_valid_mem_address",
-    "u8" : "read_valid_u8_immediate_val",
-    "u16" : "read_valid_u16_immediate_val",
-    "u32" : "read_valid_u32_immediate_val",
-    "i8" : "read_valid_i8_immediate_val",
-    "i16" : "read_valid_i16_immediate_val",
-    "i32" : "read_valid_i32_immediate_val",
+    "u8" : "read_valid_int_immediate_val<uint8_t>",
+    "u16" : "read_valid_int_immediate_val<uint16_t>",
+    "u32" : "read_valid_int_immediate_val<uint32_t>",
+    "i8" : "read_valid_int_immediate_val<int8_t>",
+    "i16" : "read_valid_int_immediate_val<int16_t>",
+    "i32" : "read_valid_int_immediate_val<int32_t>",
     "float" : "read_valid_float_immediate_val"
 }
 
@@ -85,29 +86,44 @@ hw("}\n\n")
 
 ## Generate function that parses and executes the next instruction
 
-hw("void run_next_instruction (VirtualMachine &vm) {\n")
+run_next_instruction_code = """
+void run_next_instruction (VirtualMachine &vm) {
+   using MemBank = VirtualMachine::Interpreter::MemoryBank;
 
-hw("using MemBank = VirtualMachine::Interpreter::MemoryBank;\n")
-hw("auto& pc = vm.m_interp.m_mb[MemBank::PROGRAM_COUNTER_REG];\n")
-hw("auto& mem = vm.m_interp.m_mb.memory;\n")
-hw("uint8_t opcode = mem[pc++];\n\n")
-hw("switch (opcode) {\n")
+   auto& pc = vm.m_interp.m_mb[MemBank::PROGRAM_COUNTER_REG];
+   auto& mem = vm.m_interp.m_mb.memory;
+
+   uint8_t opcode = mem[pc++];
+
+   switch (opcode) {
+    %s
+    default:
+          throw std::runtime_error(
+              (boost::format("Invalid instruction (OPCODE: %%1\%%, PC: %%2\%%)") %%
+               mem[pc] %% pc)
+                  .str());
+          break;
+
+   }
+}
+"""
+
+switch_cases_code = ""
 
 for i in data["instructions"]:
-    hw("case " + i + ": {\n")
+    switch_cases_code += ("case " + i + ": {\n")
     instruction = data["instructions"][i]
     for arg_name in instruction["args"]:
         arg_type = instruction["args"][arg_name]
-        hw(parameter_data_types[arg_type] + " " + arg_name + " = " + parse_functions[arg_type] + "(mem, pc);\n")
-        hw("pc += sizeof(" + parameter_data_types[arg_type] + ");")
-    hw(instruction["keyword"] + "_cb(vm")
+        switch_cases_code += (parameter_data_types[arg_type] + " " + arg_name + " = " + parse_functions[arg_type] + "(mem, pc);\n")
+        switch_cases_code += ("pc += sizeof(" + parameter_data_types[arg_type] + ");")
+    switch_cases_code += (instruction["keyword"] + "_cb(vm")
     for arg_name in instruction["args"]:
-        hw(", " + arg_name)
+        switch_cases_code += (", " + arg_name)
 
-    hw(");\nbreak;\n}\n")
+    switch_cases_code += (");\nbreak;\n}\n")
 
-hw("} // switch statement ")
-hw("\n}// run_next_instruction \n\n")
+hw(run_next_instruction_code % switch_cases_code)
 
 hw("#endif //INSTRUCTIONS_HXX")
 header_file.flush()
