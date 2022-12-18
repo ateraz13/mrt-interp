@@ -2,6 +2,7 @@
 #define TEST_INSTRUCTIONS
 #define FAIL_TEST(msg) return {msg};
 #define NOT_IMPLEMENTED FAIL_TEST("Test not implemented");
+#include "instructions.hxx"
 #include "interpreter.hxx"
 #include <boost/format.hpp>
 #include <functional>

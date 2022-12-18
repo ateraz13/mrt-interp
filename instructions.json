@@ -6,9 +6,9 @@
         "u8" :  "Unsigned byte value: AKA: BYTE",
         "u16" :  "Unsigned byte value aka: HALF WORD",
         "u32" : "Unsigned integer value aka: WORD",
-        "i8" :  "Signed byte value: AKA: SIGNED BYTE",
-        "i16" :  "Signed byte value aka: SIGNED HALF WORD",
-        "i32" : "Signed integer value aka: SIGNED WORD",
+        "u8" :  "Signed byte value: AKA: SIGNED BYTE",
+        "u16" :  "Signed byte value aka: SIGNED HALF WORD",
+        "u32" : "Signed integer value aka: SIGNED WORD",
         "float" : "Floating-point value"
     },
     "instructions" : {
@@ -29,15 +29,15 @@
             }
         },
         "PUSH_FLOAT_STACK" : {
-            "keyword" : "push_fl",
+            "keyword" : "pushf",
             "args" : {
-                "source" : "reg"
+                "source" : "fl_reg"
             }
         },
         "POP_FLOAT_STACK" : {
-            "keyword" : "push_fl",
+            "keyword" : "popf",
             "args" : {
-                "destination" : "reg"
+                "destination" : "fl_reg"
             }
         },
         "LOAD" : {
@@ -64,7 +64,14 @@
         "LOAD_BYTE_IMMEDIATE" : {
             "keyword" : "lbi",
             "args" : {
-                "source" : "addr",
+                "immediate_value" : "u8",
+                "destination" : "reg"
+            }
+        },
+        "LOAD_HALF_WORD_IMMEDIATE" : {
+            "keyword" : "lhwi",
+            "args" : {
+                "immediate_value" : "u16",
                 "destination" : "reg"
             }
         },
@@ -185,7 +192,7 @@
             "keyword" : "addi",
             "args" : {
                 "source1" : "reg",
-                "immediate_value" : "i32",
+                "immediate_value" : "u32",
                 "destination" : "reg"
             }
         },
@@ -193,7 +200,7 @@
             "keyword" : "subi",
             "args" : {
                 "source1" : "reg",
-                "immediate_value" : "i32",
+                "immediate_value" : "u32",
                 "destination" : "reg"
             }
         },
@@ -201,7 +208,7 @@
             "keyword" : "divi",
             "args" : {
                 "source1" : "reg",
-                "immediate_value" : "i32",
+                "immediate_value" : "u32",
                 "destination" : "reg"
             }
         },
@@ -209,7 +216,7 @@
             "keyword" : "muli",
             "args" : {
                 "source1" : "reg",
-                "immediate_value" : "i32",
+                "immediate_value" : "u32",
                 "destination" : "reg"
             }
         },
@@ -245,76 +252,106 @@
                     "destination" : "fl_reg"
                 }
             },
-            "ADD_IMMEDIATE_FLOAT" : {
-                "keyword" : "addf",
-                "args" : {
-                    "source1" : "reg",
-                    "immediate_value" : "float",
-                    "destination" : "reg"
-                }
-            },
-            "SUB_IMMEDIATE_FLOAT" : {
-                "keyword" : "subf",
-                "args" : {
-                    "source1" : "reg",
-                    "immediate_value" : "float",
-                    "destination" : "reg"
-                }
-            },
-            "DIV_IMMEDIATE_FLOAT" : {
-                "keyword" : "divf",
-                "args" : {
-                    "source1" : "reg",
-                    "immediate_value" : "float",
-                    "destination" : "reg"
-                }
-            },
-            "MULT_IMMEDIATE_FLOAT" : {
-                "keyword" : "mulf",
-                "args" : {
-                    "source1" : "reg",
-                    "immediate_value" : "float",
-                    "destination" : "reg"
-                }
-            },
-            "JUMP" : {
-                "keyword" : "jmp",
-                "args" : {
-                    "jump_address" : "addr"
-                }
-            },
-            "JUMP_ZERO" : {
-                "keyword" : "jz",
-                "args" : {
-                    "jump_address" : "addr"
-                }
-            },
-            "JUMP_EQ" : {
-                "keyword" : "je",
-                "args" : {
-                    "jump_address" : "addr"
-                }
-            },
-            "JUMP_LT" : {
-                "keyword" : "jlt",
-                "args" : {
-                    "jump_address" : "addr"
-                }
-            },
-            "JUMP_GT" : {
-                "keyword" : "jgt",
-                "args" : {
-                    "jump_address" : "addr"
-                }
-            },
-            "COMPARE" : {
-                "keyword" : "cmp",
-                "args" : {
-                    "register1" : "reg",
-                    "register2" : "reg"
-                }
-            },
-            "COMPARE_FLOAT" : {
+        "ADD_IMMEDIATE_FLOAT" : {
+            "keyword" : "addif",
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "float",
+                "destination" : "reg"
+            }
+        },
+        "SUB_IMMEDIATE_FLOAT" : {
+            "keyword" : "subif",
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "float",
+                "destination" : "reg"
+            }
+        },
+        "DIV_IMMEDIATE_FLOAT" : {
+            "keyword" : "divif",
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "float",
+                "destination" : "reg"
+            }
+        },
+        "MULT_IMMEDIATE_FLOAT" : {
+            "keyword" : "mulif",
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "float",
+                "destination" : "reg"
+            }
+        },
+        "JUMP" : {
+            "keyword" : "jmp",
+            "args" : {
+                "jump_address" : "addr"
+            }
+        },
+        "JUMP_ZERO" : {
+            "keyword" : "jz",
+            "args" : {
+                "jump_address" : "addr"
+            }
+        },
+        "JUMP_EQ" : {
+            "keyword" : "je",
+            "args" : {
+                "jump_address" : "addr"
+            }
+        },
+        "JUMP_LT" : {
+            "keyword" : "jlt",
+            "args" : {
+                "jump_address" : "addr"
+            }
+        },
+        "JUMP_GT" : {
+            "keyword" : "jgt",
+            "args" : {
+                "jump_address" : "addr"
+            }
+        },
+        "JUMP_REGISTER" : {
+            "keyword" : "jmpr",
+            "args" : {
+                "jump_address" : "reg"
+            }
+        },
+        "JUMP_REGISTER_ZERO" : {
+            "keyword" : "jzr",
+            "args" : {
+                "jump_address" : "reg"
+            }
+        },
+        "JUMP_REGISTER_EQ" : {
+            "keyword" : "jer",
+            "args" : {
+                "jump_address" : "reg"
+            }
+        },
+        "JUMP_REGISTER_LT" : {
+            "keyword" : "jltr",
+            "args" : {
+                "jump_address" : "reg"
+            }
+        },
+        "JUMP_REGISTER_GT" : {
+            "keyword" : "jgtr",
+            "args" : {
+                "jump_address" : "reg"
+            }
+        },
+        "COMPARE" : {
+            "keyword" : "cmp",
+            "args" : {
+                "register1" : "reg",
+                "register2" : "reg"
+            }
+        },
+        "COMPARE_FLOAT" : {
                 "keyword" : "cmpf",
                 "args" : {
                     "register1" : "fl_reg",

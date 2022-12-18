@@ -1,3 +1,4 @@
+#include "instructions.hxx"
 #include "interpreter.hxx"
 #include "parse.hxx"
 #include "syntax.hxx"
@@ -79,6 +80,7 @@ int main(int argc, char **argv) {
                                    0xff,
                                    OPC::HALT};
 
+    vm.m_interp.start();
     vm.m_interp.load_program(bb);
     vm.m_interp.run();
 

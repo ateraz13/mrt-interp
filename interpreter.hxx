@@ -91,7 +91,16 @@ public:
     gp_regs_32[STACK_PTR_REG]--;
   }
 
-  void pop_register_to_stack(RegID rid) {
+  void push_float_register_to_stack(RegID rid) {
+    // FIXME: MAybe validate regid here
+    if (fl_regs_32[STACK_PTR_REG] <= STACK_LOWER_LIMIT) {
+      throw std::runtime_error("Stack underflow!");
+    }
+    memory[fl_regs_32[STACK_PTR_REG]] = fl_regs_32[rid];
+    fl_regs_32[STACK_PTR_REG]--;
+  }
+
+  void pop_register_from_stack(RegID rid) {
     // FIXME: MAybe validate regid here
     if (gp_regs_32[STACK_PTR_REG] >= STACK_UPPER_LIMIT) {
       throw std::runtime_error("Stack overflow!");
@@ -99,6 +108,16 @@ public:
 
     gp_regs_32[rid] = memory[gp_regs_32[STACK_PTR_REG]];
     gp_regs_32[STACK_PTR_REG]++;
+  }
+
+  void pop_float_register_from_stack(RegID rid) {
+    // FIXME: MAybe validate regid here
+    if (fl_regs_32[STACK_PTR_REG] >= STACK_UPPER_LIMIT) {
+      throw std::runtime_error("Stack overflow!");
+    }
+
+    fl_regs_32[rid] = memory[fl_regs_32[STACK_PTR_REG]];
+    fl_regs_32[STACK_PTR_REG]++;
   }
 
   bool check_flag(uint32_t flag_bit) const {
@@ -138,45 +157,16 @@ struct Interpreter {
   // in the bytecode.
   // NOTE: We need to figure out how we're going to store immediate values
   void load_program(BytecodeBuffer &buffer);
+  void start() { m_is_running = true; }
+  void stop() { m_is_running = false; }
+  bool is_running() const { return m_is_running; }
   void run();
 
 private:
   using MemoryBuffer = decltype(MemoryBank::memory);
 
-  void push_stack(RegID reg);
-  void pop_stack(RegID reg);
-  void load(RegID reg, MemPtr ptr);
-  void store(RegID reg, MemPtr ptr);
-  void load_immediate(RegID reg, uint32_t val);
-  void store_float(RegID reg, MemPtr ptr);
-  void load_float(RegID reg, MemPtr ptr);
-  void load_immediate_float(RegID reg, float val);
+  bool m_is_running;
 
-  void shift_left(RegID reg1, RegID shit_by_reg2, RegID dest_reg);
-  void shift_right(RegID reg1, RegID shit_by_reg2, RegID dest_reg);
-  void shift_left_immediate(RegID reg1, uint32_t shift_by, RegID dest_reg);
-  void shift_right_immediate(RegID reg1, uint32_t shift_by, RegID dest_reg);
-
-  void add(RegID reg1, RegID reg2, RegID dest_reg);
-  void sub(RegID reg1, RegID reg2, RegID dest_reg);
-  void mult(RegID reg1, RegID reg2, RegID dest_reg);
-  void div(RegID reg1, RegID reg2, RegID dest_reg);
-
-  void add_float(RegID reg1, RegID reg2, RegID dest_reg);
-  void sub_float(RegID reg1, RegID reg2, RegID dest_reg);
-  void mult_float(RegID reg1, RegID reg2, RegID dest_reg);
-  void div_float(RegID reg1, RegID reg2, RegID dest_reg);
-
-  void jump(RegID reg);
-  void jump_zero(RegID reg);
-  void jump_eq(RegID reg);
-  void jump_lt(RegID reg);
-  void jump_gt(RegID reg);
-
-  void cmp(RegID reg1, RegID reg2);
-  void cmp_float(RegID reg1, RegID reg2);
-
-  // FIXME: In the future we want to make this private
 public:
   MemoryBank m_mb;
 };
@@ -199,18 +189,31 @@ public:
   Interpreter m_interp;
 };
 
+void check_bytes_ahead(MemoryBank::MemoryBuffer &buffer, size_t index,
+                       size_t count);
+
+// NOTE: This is an auxilary function to make the code more readable.
+template <typename Type> Type *looking_at_cast(uint8_t *ptr) {
+  return reinterpret_cast<Type *>(ptr);
+}
+
+template <typename IntType> IntType vm_to_host_number(IntType n) { return n; }
+
 RegID read_valid_regid(MemoryBank::MemoryBuffer &buffer, uint32_t &pc);
 RegID read_valid_float_regid(MemoryBank::MemoryBuffer &buffer, uint32_t &pc);
 MemPtr read_valid_mem_address(MemoryBank::MemoryBuffer &buffer, uint32_t &pc);
+
 template <typename IntType>
 IntType read_valid_int_immediate_val(MemoryBank::MemoryBuffer &buffer,
-                                     uint32_t &pc);
+                                     uint32_t &pc) {
+
+  check_bytes_ahead(buffer, pc, sizeof(IntType));
+  int32_t res =
+      vm_to_host_number<IntType>(*looking_at_cast<IntType>(&buffer[pc]));
+  return res;
+}
 float read_valid_float_immediate_val(MemoryBank::MemoryBuffer &buffer,
                                      uint32_t &pc);
 MemPtr check_mem_address_with_throw(MemPtr mem_ptr);
-
-namespace VM {
-#include "instructions.hxx"
-} // namespace VM
 
 #endif // INTERPRETER_H

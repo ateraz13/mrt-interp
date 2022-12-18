@@ -5,10 +5,12 @@ import subprocess
 ## FIXME: Use formating strings to make the templates more readable.
 
 header_filename = "./instructions.hxx"
+source_filename = "./instructions.cxx"
 data_json_filename = "./instructions.json"
 
 data = json.load(open(data_json_filename, "r"))
 header_file = open(header_filename, "w")
+source_file = open(source_filename, "w")
 
 parameter_data_types = {
     "reg" : "RegID",
@@ -44,12 +46,14 @@ idx = 0
 
 hw("#ifndef INSTRUCTIONS_HXX\n")
 hw("#define INSTRUCTIONS_HXX\n")
+hw("#include \"interpreter.hxx\"\n")
 hw("#include <array>\n")
 hw("#include <cstdint> \n\n")
 
 
 # Generate enumerations for opcodes
 
+hw("namespace VM {\n\n")
 hw("struct OpCodes {\n")
 
 for i in data["instructions"].keys():
@@ -62,7 +66,7 @@ hw("};\n\n")
 
 # Generate instruction keyword table
 
-hw("std::array<const char*, " + str(len(data["instructions"].keys())) + "> instruction_keywords = {\n")
+hw("static std::array<const char*, " + str(len(data["instructions"].keys())) + "> instruction_keywords = {\n")
 
 for i in data["instructions"].keys():
     hw("\t\"" + data["instructions"][i]["keyword"] + "\",\n")
@@ -84,15 +88,31 @@ for i in data["instructions"]:
 
 hw("}\n\n")
 
+hw("void run_next_instruction (Interpreter &interp);\n\n")
+
+hw("} // namespace VM\n\n")
+
+hw("#endif //INSTRUCTIONS_HXX")
+
+header_file.flush()
+header_file.close()
+
 ## Generate function that parses and executes the next instruction
 
 run_next_instruction_code = """
-void run_next_instruction (Interpreter &interp) {
+#include "interpreter.hxx"
+#include "instructions.hxx"
+
+void VM::run_next_instruction (Interpreter &interp) {
 
    auto& pc = interp.m_mb.gp_regs_32[MemoryBank::PROGRAM_COUNTER_REG];
    auto& mem = interp.m_mb.memory;
 
    uint8_t opcode = mem[pc++];
+
+   if(!interp.is_running()) {
+       throw std::runtime_error("Cannot run next instruction, interpreter not running!");
+   }
 
    switch (opcode) {
     %s
@@ -110,28 +130,28 @@ void run_next_instruction (Interpreter &interp) {
 switch_cases_code = ""
 
 for i in data["instructions"]:
-    switch_cases_code += ("case OpCodes::" + i + ": {\n")
+    switch_cases_code += ("case VM::OpCodes::" + i + ": {\n")
     instruction = data["instructions"][i]
+    switch_cases_code += "std::cout << \"Running " +  instruction["keyword"] +  " instruction\" << std::endl;\n"
     for arg_name in instruction["args"]:
         arg_type = instruction["args"][arg_name]
         switch_cases_code += (parameter_data_types[arg_type] + " " + arg_name + " = " + parse_functions[arg_type] + "(mem, pc);\n")
-        switch_cases_code += ("pc += sizeof(" + parameter_data_types[arg_type] + ");")
-    switch_cases_code += ("callbacks::" + instruction["keyword"] + "_cb(interp")
+        switch_cases_code += ("pc += sizeof(" + parameter_data_types[arg_type] + ");\n")
+    switch_cases_code += ("VM::callbacks::" + instruction["keyword"] + "_cb(interp")
     for arg_name in instruction["args"]:
         switch_cases_code += (", " + arg_name)
 
     switch_cases_code += (");\nbreak;\n}\n")
 
-hw(run_next_instruction_code % switch_cases_code)
+source_file.write(run_next_instruction_code % switch_cases_code)
 
-hw("#endif //INSTRUCTIONS_HXX")
-header_file.flush()
-header_file.close()
 
 # We might use stdin to send the code directly to the process and than let it write it to a file
 
-clang_format_cmd = "clang-format -i " + header_filename
-
-cres = subprocess.call(clang_format_cmd, shell = True)
-if not cres: print ("Clang format successful!")
-else: print("Clang format unsuccessful!")
+def clang_format_file(fn):
+    clang_format_cmd = "clang-format -i " + header_filename
+    cres = subprocess.call(clang_format_cmd, shell = True)
+    if not cres: print ("clang-format -i  " + fn + ": success!")
+    else: print ("clang-format -i  " + fn + ": failed!")
+clang_format_file(header_filename)
+clang_format_file(source_filename)
