@@ -19,11 +19,77 @@ import subprocess
 ##   compiler won't have anything to complain about.
 
 
-class InstructionGenerator:
+class CodeGenerator:
+
+    def flatten(self, lst):
+        if type(lst) == str:
+            return lst
+        elif type(lst) == list:
+            string = ""
+            for s in lst:
+                string += str(s)
+            return string;
+        elif type(lst) == None:
+            return ""
+        else:
+            return str(lst)
+
+
+    def generate_local_includes(self, includes):
+        includes_src = ""
+        for include in includes:
+            includes_src += "#include \"" + include + "\"\n"
+        return includes_src
+
+    def generate_global_includes(self, includes):
+        includes_src = ""
+        for include in includes:
+            includes_src += "#include <" + include + ">\n"
+        return includes_src
+
+    def generate_header_guard(self, name, contents):
+        return """\
+        #ifndef %s_HXX
+        #define %s_HXX
+
+        %s
+
+        #endif // %s
+        """ % (name, name, self.flatten(contents), name)
+
+    def generate_namespace(self, name, contents):
+        return """\
+        namespace %s {
+            %s
+        } // sauce
+        """ % (name, self.flatten(contents))
+
+    def generate_class(self, name, contents):
+        return """\
+        class %s {
+            %s
+        };
+        """ % (name, self.flatten(contents))
+
+    def generate_struct(self, name, contents):
+        return """\
+        struct %s {
+            %s
+        };
+        """ % (name, self.flatten(contents))
+
+    def generate_array(self, data_type, array_size, array_name, contents):
+        return """
+        std::array<%s, %d> %s {
+            %s
+        };
+        """ % (data_type, array_size, array_name, self.flatten(contents))
+
+class InstructionGenerator(CodeGenerator):
 
     header_filename = "./instructions.hxx"
     source_filename = "./instructions.cxx"
-    data_json_filename = None
+    data_json_filename = ""
 
     data = None
     header_file = None
@@ -55,99 +121,75 @@ class InstructionGenerator:
         "float" : "read_valid_float_immediate_val"
     }
 
-    def __init__(json_fn):
-        data_json_filename = json_fn
-        data = json.load(open(data_json_filename, "r"))
-        header_file = open(header_filename, "w")
-        source_file = open(source_filename, "w")
+    def __init__(self, json_fn):
+        self.data_json_filename = json_fn
+        self.data = json.load(open(self.data_json_filename, "r"))
+        self.header_file = open(self.header_filename, "w")
+        self.source_file = open(self.source_filename, "w")
 
-        generate_beginning_of_instrucions_header()
-        generate_opcode_enumerations()
-        generate_instruction_keyword_array()
-        generate_parameter_list_array()
-        generate_callback_declarations()
-        generate_ending_of_instruction_header()
-        generate_instruction_executor()
+        header_file_src = self.flatten([
+            self.generate_header_guard("INSTRUCTIONS", [
+                self.generate_local_includes(["interpreter.hxx"]),
+                self.generate_global_includes(["array", "cstdint"]),
+                self.generate_namespace("VM", [
+                    self.generate_struct("OpCodes", [
+                        self.generate_opcode_enumerations(),
+                    ]),
+                    self.generate_instruction_keyword_array(),
+                    self.generate_parameter_lists_array(),
+                    self.generate_namespace("callbacks", [
+                        self.generate_callback_declarations(),
+                    ]),
+                ])
+            ])
+        ])
+        self.header_file.write(header_file_src)
+        self.header_file.flush()
+        self.header_file.close()
+        self.generate_instruction_executor()
 
-
-    def generate_begining_of_instructions_header():
-        header_begining = """\
-        #ifndef INSTRUCTIONS_HXX
-        #define INSTRUCTIONS_HXX
-        #include "interpreter.hxx"
-        #include <array>
-        #include <cstdint>"
-        """
-        header_file.write(header_beginning)
-
-
-    def generate_opcode_enumerations():
+    def generate_opcode_enumerations(self):
         idx = 0
-        opcode_struct = """\
-        namespace VM {
-        struct OpCodes {
-            %s
-        };
-        """
         opcode_enumerations = ""
 
-        for i in data["instructions"].keys():
+        for i in self.data["instructions"].keys():
             # i = i.replace("\n", "")
             opcode_enumerations += "\tstatic const uint8_t " + i + " = " + str(idx) + ";\n"
             idx += 1
 
-        header_file.write(opcode_struct % opcode_enumerations)
+        return opcode_enumerations
 
-    def generate_instruction_keyword_array():
-        keyword_count = len(data["instructions"].keys())
-        instruction_keyword_array = """
-        static std::array<const char*, %d> instruction_keywords = {)
-            %s
-        };
-        """
-
+    def generate_instruction_keyword_array(self):
+        keyword_count = len(self.data["instructions"].keys())
         instruction_keyword_str_literals = ""
 
-        for i in data["instructions"].keys():
-            instruction_keyword_str_literals += "\t\"" + data["instructions"][i]["keyword"] + "\",\n"
+        for i in self.data["instructions"].keys():
+            instruction_keyword_str_literals += "\t\"" + self.data["instructions"][i]["keyword"] + "\",\n"
 
-        header_file.write(instruction_keyword_array % keyword_count % instruction_keyword_str_literals)
+        return self.generate_array("const char*", keyword_count, "instruction_keywords", instruction_keyword_str_literals)
 
-    def generate_parameter_lists_array():
-        return
+    def generate_parameter_lists_array(self):
+        return ""
 
-    def generate_callback_declarations():
-        callbacks_namespace = """
-        namespace callbacks {
-            %s
-            void run_next_instruction (Interpreter &interp);
-        }
-        """
-
+    def generate_callback_declarations(self):
         callback_declarations = ""
 
-        for i in data["instructions"]:
-            keyword = data["instructions"][i]["keyword"]
-            callbacks_declarations += ("\tvoid " + keyword + "_cb" + "(Interpreter& vm")
-            for arg_name in data["instructions"][i]["args"].keys():
-                arg_type = data["instructions"][i]["args"][arg_name]
-                callbacks_declarations += (", " + parameter_data_types[arg_type] + " " + arg_name)
+        for i in self.data["instructions"]:
+            keyword = self.data["instructions"][i]["keyword"]
+            callback_declarations += ("\tvoid " + keyword + "_cb" + "(Interpreter& vm")
+            for arg_name in self.data["instructions"][i]["args"].keys():
+                arg_type = self.data["instructions"][i]["args"][arg_name]
+                callback_declarations += (", " + self.parameter_data_types[arg_type] + " " + arg_name)
 
-            callbacks_declarations += (");\n\n")
-        header_file.write(callbacks_namespace % callbacks_declarations)
+            callback_declarations += (");\n\n")
 
-    def generate_end_of_instructions_header():
-        instructions_header_end = """
-        #endif //INSTRUCTIONS_HXX
-        """
+        callback_declarations += "void run_next_instruction (Interpreter &interp);"
+        return callback_declarations
 
-        header_file.write(instructions_header_end)
-        header_file.flush()
-        header_file.close()
 
     ## Generate function that parses and executes the next instruction
 
-    def generate_instruction_executor():
+    def generate_instruction_executor(self):
         run_next_instruction_code = """\
         #include "interpreter.hxx"
         #include "instructions.hxx"
@@ -179,25 +221,24 @@ class InstructionGenerator:
 
         switch_cases_code = ""
 
-        for i in data["instructions"]:
+        for i in self.data["instructions"]:
             switch_cases_code += ("case VM::OpCodes::" + i + ": {\n")
-            instruction = data["instructions"][i]
+            instruction = self.data["instructions"][i]
             # TODO: We may print instructions and their parameters for debugging purposes.
             switch_cases_code += "std::cout << \"Running " +  instruction["keyword"] +  " instruction\" << std::endl;\n"
             for arg_name in instruction["args"]:
                 arg_type = instruction["args"][arg_name]
-                switch_cases_code += (parameter_data_types[arg_type] + " " + arg_name + " = " + parse_functions[arg_type] + "(mem, pc);\n")
-                switch_cases_code += ("pc += sizeof(" + parameter_data_types[arg_type] + ");\n")
-            switch_cases_code += ("VM::callbacks::" + instruction["keyword"] + "_cb(interp")
+                switch_cases_code += (self.parameter_data_types[arg_type] + " " + arg_name + " = " + self.parse_functions[arg_type] + "(mem, pc);\n")
+                switch_cases_code += ("pc += sizeof(" + self.parameter_data_types[arg_type] + ");\n")
+                switch_cases_code += ("VM::callbacks::" + instruction["keyword"] + "_cb(interp")
             for arg_name in instruction["args"]:
                 switch_cases_code += (", " + arg_name)
 
             switch_cases_code += (");\nbreak;\n}\n")
 
-        source_file.write(run_next_instruction_code % switch_cases_code)
-
-        source_file.flush();
-        source_file.close();
+        self.source_file.write(run_next_instruction_code % switch_cases_code)
+        self.source_file.flush();
+        self.source_file.close();
 
 # We might use stdin to send the code directly to the process and than let it write it to a file
 
@@ -208,6 +249,6 @@ def clang_format_file(fn):
     else: print ("clang-format -i  " + fn + ": failed!")
 
 
-InstructionGenerator("./instructions.json")
-clang_format_file(header_filename)
-clang_format_file(source_filename)
+ins_gen = InstructionGenerator("./instructions.json")
+clang_format_file(ins_gen.header_filename)
+clang_format_file(ins_gen.source_filename)
