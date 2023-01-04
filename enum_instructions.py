@@ -18,22 +18,25 @@ import subprocess
 ##   Like this we can simply define a preprocessor macro that does nothing and the
 ##   compiler won't have anything to complain about.
 
-
 class CodeGenerator:
 
-    def flatten(self, lst):
+    def flatten(self, lst, separator=""):
         if type(lst) == str:
             return lst
         elif type(lst) == list:
-            string = ""
-            for s in lst:
-                string += str(s)
-            return string;
+            if len(lst) > 0:
+                string = lst.pop(0)
+                for s in lst:
+                    string += separator + str(s)
+                return string;
+            else:
+                return ""
+        elif lst == None:
+            return ""
         elif type(lst) == None:
             return ""
         else:
             return str(lst)
-
 
     def generate_local_includes(self, includes):
         includes_src = ""
@@ -85,6 +88,12 @@ class CodeGenerator:
         };
         """ % (data_type, array_size, array_name, self.flatten(contents))
 
+    def generate_variant(self, data_types, name):
+        variant = "std::variant<%s> %s;"
+        type_specifiers = self.flatten(data_types, separator=", ")
+        return variant % (type_specifiers, name)
+
+
 class InstructionGenerator(CodeGenerator):
 
     header_filename = "./instructions.hxx"
@@ -121,16 +130,21 @@ class InstructionGenerator(CodeGenerator):
         "float" : "read_valid_float_immediate_val"
     }
 
+    parameter_variaties = []
+
     def __init__(self, json_fn):
         self.data_json_filename = json_fn
         self.data = json.load(open(self.data_json_filename, "r"))
         self.header_file = open(self.header_filename, "w")
         self.source_file = open(self.source_filename, "w")
 
+        self.compile_parameter_variaties()
+
+
         header_file_src = self.flatten([
             self.generate_header_guard("INSTRUCTIONS", [
                 self.generate_local_includes(["interpreter.hxx"]),
-                self.generate_global_includes(["array", "cstdint"]),
+                self.generate_global_includes(["array", "cstdint", "variant"]),
                 self.generate_namespace("VM", [
                     self.generate_struct("OpCodes", [
                         self.generate_opcode_enumerations(),
@@ -140,6 +154,10 @@ class InstructionGenerator(CodeGenerator):
                     self.generate_namespace("callbacks", [
                         self.generate_callback_declarations(),
                     ]),
+                    self.generate_namespace("parameters", [
+                        self.generate_parameter_list_types(),
+                        self.generate_parameter_variant()
+                    ])
                 ])
             ])
         ])
@@ -147,6 +165,31 @@ class InstructionGenerator(CodeGenerator):
         self.header_file.flush()
         self.header_file.close()
         self.generate_instruction_executor()
+
+    def compile_parameter_variaties(self):
+        for instr in self.data["instructions"].keys():
+            if list(self.data["instructions"][instr]["args"].values()) not in self.parameter_variaties:
+                self.parameter_variaties.append(list(self.data["instructions"][instr]["args"].values()))
+        for ca in self.parameter_variaties:
+            print(ca)
+
+    def generate_parameter_list_types(self):
+        structs = ""
+        i = 0
+        for pv in self.parameter_variaties:
+            i += 1
+            if len(pv) == 0:
+                print("Empty List")
+                structs += self.generate_struct("ParameterList"+str(i), "")
+            else:
+                structs += self.flatten(self.generate_struct("ParameterList"+str(i), [
+                    "\t" + self.parameter_data_types[x] + " arg"+str(arg_idx)+";\n"  for x, arg_idx in zip(pv,range(0, len(pv)))
+                ]))
+        return structs
+
+    def generate_parameter_variant(self):
+        return self.generate_variant(["ParameterList"+str(x) for x in range(0, len(self.parameter_variaties))], "parameter_variaties")
+
 
     def generate_opcode_enumerations(self):
         idx = 0
