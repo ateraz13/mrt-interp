@@ -41,6 +41,11 @@
 ***             }
 ***         )
 ***         .end();
+***
+*** TODO: Use a variant to store instruction paraments
+*** and each callback to a instruction implementation will take a
+*** it as a parameter. This means we can store all the callbacks in
+*** a vector and than call them from the interpreter runtime.
 /*/
 
 int main(int argc, char **argv) {
