@@ -81,6 +81,22 @@ class CodeGenerator:
         };
         """ % (name, self.flatten(contents))
 
+    def generate_struct_template(self, name, type_defs, contents):
+        return """
+        template<%s>
+        struct %s {
+            %s
+        };
+        """ % (self.flatten(type_defs, separator=", "), name, self.flatten(contents))
+
+    def generate_struct_template_specialization(self, type_defs, name, contents):
+        return """
+        template<>
+        struct %s<%s> {
+            %s
+        };
+        """ % (name, self.flatten(type_defs, separator=", "), self.flatten(contents))
+
     def generate_array(self, data_type, array_size, array_name, contents):
         return """
         std::array<%s, %d> %s {
@@ -131,6 +147,7 @@ class InstructionGenerator(CodeGenerator):
     }
 
     parameter_variaties = []
+    opcode_enums = []
 
     def __init__(self, json_fn):
         self.data_json_filename = json_fn
@@ -138,8 +155,8 @@ class InstructionGenerator(CodeGenerator):
         self.header_file = open(self.header_filename, "w")
         self.source_file = open(self.source_filename, "w")
 
+        self.opcode_enums = list(self.data["instructions"].keys())
         self.compile_parameter_variaties()
-
 
         header_file_src = self.flatten([
             self.generate_header_guard("INSTRUCTIONS", [
@@ -167,29 +184,43 @@ class InstructionGenerator(CodeGenerator):
         self.generate_instruction_executor()
 
     def compile_parameter_variaties(self):
-        for instr in self.data["instructions"].keys():
-            if list(self.data["instructions"][instr]["args"].values()) not in self.parameter_variaties:
-                self.parameter_variaties.append(list(self.data["instructions"][instr]["args"].values()))
-        for ca in self.parameter_variaties:
-            print(ca)
+        self.parameter_variaties = [list(x["args"].values()) for x in self.data["instructions"].values()]
+        print(self.parameter_variaties)
+        # for instr in self.data["instructions"].keys():
+        #     if list(self.data["instructions"][instr]["args"].values()) not in self.parameter_variaties:
+        #         self.parameter_variaties.append(list(self.data["instructions"][instr]["args"].values()))
+        # for ca in self.parameter_variaties:
+        #     print(ca)
 
     def generate_parameter_list_types(self):
-        structs = ""
-        i = 0
-        for pv in self.parameter_variaties:
-            i += 1
+        structs = self.generate_struct_template("ParameterList", "uint8_t", "")
+
+        ## FIXME Because we have compiled all the parameter lists to only the unique ones now we need to find a way
+        ## to map OpCode to its parameter type.
+        ##
+        ## TODO: Instead of compiling to unique parameter lists we can just generate all the parameter lists they will occupy
+        ## the same amount of memory anyway once they are part of a variant. Unless there is a good reason not to, generating two paramter lists with
+        ## the same parameter types shouldn't be a problem and as a added benefit we can name our parameters accordingly instead of using names like "arg1, arg2".
+
+        for i, pv in enumerate(self.parameter_variaties):
+            opcode = self.opcode_enums[i]
             if len(pv) == 0:
-                print("Empty List")
-                structs += self.generate_struct("ParameterList"+str(i), "")
+                structs += self.generate_struct_template_specialization("OpCodes::"+opcode, "ParameterList", "")
             else:
-                structs += self.flatten(self.generate_struct("ParameterList"+str(i), [
+                structs += self.flatten(self.generate_struct_template_specialization("OpCodes::"+opcode, "ParameterList", [
                     "\t" + self.parameter_data_types[x] + " arg"+str(arg_idx)+";\n"  for x, arg_idx in zip(pv,range(0, len(pv)))
                 ]))
+
+
         return structs
 
     def generate_parameter_variant(self):
-        return self.generate_variant(["ParameterList"+str(x) for x in range(0, len(self.parameter_variaties))], "parameter_variaties")
+        return self.generate_variant(["ParameterList<OpCodes::"+self.opcode_enums[x]+"> " for x in range(0, len(self.parameter_variaties))], "parameter_variaties")
 
+
+    def generate_argument_parser(self):
+        # Generate parameter parsers for each instruction
+        return ""
 
     def generate_opcode_enumerations(self):
         idx = 0
