@@ -1,8 +1,22 @@
 #+title: Design notes
 
-* General ideas
+* Architecture
+** Instructions
+Instructions are composed of an 8-bit opcode which denotes the instructions identifier.
+After opcode follows a list of parameters that can be either 8, 16 or 32 bit values, these
+include immediate values(int, float), memory addresses, register identifiers and possibly others in the future.
+*** Alignment and padding
+**** TODO Define memory aligment and padding for instructions
+Currently the instructions do to include any padding, that means the size of the instruction is can be calculated by summing up the sizes of its parameters and 1-byte to include the opcode it self. At the point of writing the memory aligment for the instruction is not defined and that needs to be decided upon in the near future. It is also possible instructions may become fixed sized in the future as it may accelerate the virtual machine.
+
 ** Memory Model
-+ Stack grows down, from upper bound to lower bound.
++ Stack grows down, from upper bound to lower
+** Virtual machine
+*** Non-object oriented implmentation
+Currently everything is written almost without polymorphism and especially the generated code
+in "instructions.hxx". Instread implementing an abstract class of type Instruction and then derive other instructions from it, we implement our own "virtual tables" by storing vectors of function pointers that point to specific functions. This allows us to be flexible in the design even and the object-oriented way of doing things wouldn't be of much use to us because the instruction classes wouldn't be interated with programatically too often anyway. In addition it also gives us more over how the instructions are stored and processed and potentially implement JIT in the future.
+
+* General ideas
 ** Interpreter
 + Instead of translating tokens directly into instructions we can translate expressions into
   proper mathematical representation in memory but as this is an interpreter indirection might
@@ -20,8 +34,6 @@
   parsing stage to produce values out of them, we could also copy all the substrings
   but that would require unnecessary memory allocation which we do not want due to
   peformance reasons.
-
-
 
 + The interpreter is going to be a stack machine
   argmuments for instructions will be suplied through the stack;
