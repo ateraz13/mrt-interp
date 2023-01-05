@@ -4,6 +4,8 @@ project(interp)
 
 find_package(Boost)
 
+set(CMAKE_CXX_STANDARD 20)
+
 # NOTE: We could link interpreter into an library.
 
 add_executable(interp main.cxx parse.cxx syntax.cxx instructions.cxx
