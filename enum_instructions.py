@@ -173,7 +173,8 @@ class InstructionGenerator(CodeGenerator):
                     ]),
                     self.generate_namespace("parameters", [
                         self.generate_parameter_list_types(),
-                        self.generate_parameter_variant()
+                        self.generate_parameter_variant(),
+                        self.generate_parameter_parser()
                     ])
                 ])
             ])
@@ -184,13 +185,7 @@ class InstructionGenerator(CodeGenerator):
         self.generate_instruction_executor()
 
     def compile_parameter_variaties(self):
-        self.parameter_variaties = [list(x["args"].values()) for x in self.data["instructions"].values()]
-        print(self.parameter_variaties)
-        # for instr in self.data["instructions"].keys():
-        #     if list(self.data["instructions"][instr]["args"].values()) not in self.parameter_variaties:
-        #         self.parameter_variaties.append(list(self.data["instructions"][instr]["args"].values()))
-        # for ca in self.parameter_variaties:
-        #     print(ca)
+        self.parameter_variaties = [x["args"] for x in self.data["instructions"].values()]
 
     def generate_parameter_list_types(self):
         structs = self.generate_struct_template("ParameterList", "uint8_t", "")
@@ -202,29 +197,35 @@ class InstructionGenerator(CodeGenerator):
         ## the same amount of memory anyway once they are part of a variant. Unless there is a good reason not to, generating two paramter lists with
         ## the same parameter types shouldn't be a problem and as a added benefit we can name our parameters accordingly instead of using names like "arg1, arg2".
 
-        structs += "template<uint8_t> parse (MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {}"
+        structs += "template<uint8_t OpCode> ParameterList<OpCode> parse (MemoryBank::MemoryBuffer &buffer, uint32_t &pc);"
 
         for i, pv in enumerate(self.parameter_variaties):
             opcode = "OpCodes::"+self.opcode_enums[i]
-            if len(pv) == 0:
+            if len(pv.keys()) == 0:
                 structs += self.generate_struct_template_specialization(opcode, "ParameterList", "")
             else:
                 structs += self.flatten(self.generate_struct_template_specialization(opcode, "ParameterList", [
-                    "\t" + self.parameter_data_types[x] + " arg"+str(arg_idx)+";\n"  for x, arg_idx in zip(pv,range(0, len(pv)))
+                    "\t" + self.parameter_data_types[data_type] + " " + name +";\n"  for name, data_type in zip(pv.keys(), pv.values())
                 ]))
 
-            structs += """
+            parse_args = ["args." + name  + " = " + self.parse_functions[data_type] + "(buffer, pc);\n" for name, data_type in zip(pv.keys(), pv.values())]
+
+            structs += """\n
                 template<>
                 ParameterList<%s> parse<%s>(MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
                     ParameterList<%s> args;
                     %s
                     return args;
                 }
-            """ % (opcode, opcode, opcode, self.flatten(["args.arg" + str(arg_idx) + " = " + self.parse_functions[arg_type] + "(buffer, pc);\n" for arg_idx, arg_type in enumerate(pv)]))
+            """ % (opcode, opcode, opcode, self.flatten(parse_args))
+
+
         return structs
 
     def generate_parameter_variant(self):
-        return self.generate_variant(["ParameterList<OpCodes::"+self.opcode_enums[x]+"> " for x in range(0, len(self.parameter_variaties))], "parameter_variaties")
+        return "using ParameterListAny = std::variant<\n%s\n>;" \
+                % self.flatten(["ParameterList<OpCodes::"+self.opcode_enums[x]+">\n "
+                                for x in range(0, len(self.parameter_variaties))], separator=", ")
 
 
     def generate_argument_parser(self):
@@ -269,6 +270,22 @@ class InstructionGenerator(CodeGenerator):
         callback_declarations += "void run_next_instruction (Interpreter &interp);"
         return callback_declarations
 
+    def generate_parameter_parser(self):
+        source = """\n
+        ParameterListAny parse_parameter(OpCode op, MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
+            switch(op) {
+                %s
+            }
+        }
+        """
+
+        case = "case OpCodes::%s: return parse<OpCodes::%s>(buffer, pc);"
+
+        cases = self.flatten([
+            case % (opcode, opcode) for opcode in self.data["instructions"].keys()
+        ])
+
+        return source % cases
 
     ## Generate function that parses and executes the next instruction
 
@@ -302,22 +319,16 @@ class InstructionGenerator(CodeGenerator):
         }
         """
 
-        switch_cases_code = ""
-
-        for i in self.data["instructions"]:
-            switch_cases_code += ("case VM::OpCodes::" + i + ": {\n")
-            instruction = self.data["instructions"][i]
-            # TODO: We may print instructions and their parameters for debugging purposes.
-            switch_cases_code += "std::cout << \"Running " +  instruction["keyword"] +  " instruction\" << std::endl;\n"
-            for arg_name in instruction["args"]:
-                arg_type = instruction["args"][arg_name]
-                switch_cases_code += (self.parameter_data_types[arg_type] + " " + arg_name + " = " + self.parse_functions[arg_type] + "(mem, pc);\n")
-                switch_cases_code += ("pc += sizeof(" + self.parameter_data_types[arg_type] + ");\n")
-                switch_cases_code += ("VM::callbacks::" + instruction["keyword"] + "_cb(interp")
-            for arg_name in instruction["args"]:
-                switch_cases_code += (", " + arg_name)
-
-            switch_cases_code += (");\nbreak;\n}\n")
+        case = """\
+        case VM::OpCodes::%s: {
+            auto parameters = parameters::parse<VM::OpCodes::%s>(mem, pc);
+            %s(parameters);
+            break;
+        };
+        """
+        switch_cases_code = self.flatten([
+             case %  (opcode, opcode, self.data["instructions"][opcode]["keyword"] + "_cb") for opcode in self.data["instructions"]
+        ])
 
         self.source_file.write(run_next_instruction_code % switch_cases_code)
         self.source_file.flush();
