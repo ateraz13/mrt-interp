@@ -216,9 +216,11 @@ class InstructionGenerator(CodeGenerator):
             structs += """
                 template<>
                 ParameterList<%s> parse<%s>(MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
+                    ParameterList<%s> args;
                     %s
+                    return args;
                 }
-            """ % (opcode, opcode, self.flatten(["this->arg" + str(arg_idx) + " = " + self.parse_functions[arg_type] + "(buffer, pc);\n" for arg_idx, arg_type in enumerate(pv)]))
+            """ % (opcode, opcode, opcode, self.flatten(["args.arg" + str(arg_idx) + " = " + self.parse_functions[arg_type] + "(buffer, pc);\n" for arg_idx, arg_type in enumerate(pv)]))
         return structs
 
     def generate_parameter_variant(self):
