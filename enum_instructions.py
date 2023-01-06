@@ -202,16 +202,23 @@ class InstructionGenerator(CodeGenerator):
         ## the same amount of memory anyway once they are part of a variant. Unless there is a good reason not to, generating two paramter lists with
         ## the same parameter types shouldn't be a problem and as a added benefit we can name our parameters accordingly instead of using names like "arg1, arg2".
 
+        structs += "template<uint8_t> parse (MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {}"
+
         for i, pv in enumerate(self.parameter_variaties):
-            opcode = self.opcode_enums[i]
+            opcode = "OpCodes::"+self.opcode_enums[i]
             if len(pv) == 0:
-                structs += self.generate_struct_template_specialization("OpCodes::"+opcode, "ParameterList", "")
+                structs += self.generate_struct_template_specialization(opcode, "ParameterList", "")
             else:
-                structs += self.flatten(self.generate_struct_template_specialization("OpCodes::"+opcode, "ParameterList", [
+                structs += self.flatten(self.generate_struct_template_specialization(opcode, "ParameterList", [
                     "\t" + self.parameter_data_types[x] + " arg"+str(arg_idx)+";\n"  for x, arg_idx in zip(pv,range(0, len(pv)))
                 ]))
 
-
+            structs += """
+                template<>
+                ParameterList<%s> parse<%s>(MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
+                    %s
+                }
+            """ % (opcode, opcode, self.flatten(["this->arg" + str(arg_idx) + " = " + self.parse_functions[arg_type] + "(buffer, pc);\n" for arg_idx, arg_type in enumerate(pv)]))
         return structs
 
     def generate_parameter_variant(self):
