@@ -89,7 +89,7 @@
                 "destination" : "fl_reg"
             }
         },
-        "LOAD_IMMEDIATE_FLOAT" : {
+        "LOAD_FLOAT_IMMEDIATE" : {
             "keyword" : "lfi",
             "args" : {
                 "immediate_value" : "float",
@@ -188,34 +188,34 @@
                 "destination" : "reg"
             }
         },
-        "ADD_IMMEDIATE_INT" : {
+        "ADD_INT_IMMEDIATE" : {
             "keyword" : "addi",
             "args" : {
-                "source1" : "reg",
+                "source" : "reg",
                 "immediate_value" : "u32",
                 "destination" : "reg"
             }
         },
-        "SUB_IMMEDIATE_INT" : {
+        "SUB_INT_IMMEDIATE" : {
             "keyword" : "subi",
             "args" : {
-                "source1" : "reg",
+                "source" : "reg",
                 "immediate_value" : "u32",
                 "destination" : "reg"
             }
         },
-        "DIV_IMMEDIATE_INT" : {
+        "DIV_INT_IMMEDIATE" : {
             "keyword" : "divi",
             "args" : {
-                "source1" : "reg",
+                "source" : "reg",
                 "immediate_value" : "u32",
                 "destination" : "reg"
             }
         },
-        "MULT_IMMEDIATE_INT" : {
+        "MULT_INT_IMMEDIATE" : {
             "keyword" : "muli",
             "args" : {
-                "source1" : "reg",
+                "source" : "reg",
                 "immediate_value" : "u32",
                 "destination" : "reg"
             }
@@ -252,34 +252,34 @@
                     "destination" : "fl_reg"
                 }
             },
-        "ADD_IMMEDIATE_FLOAT" : {
+        "ADD_FLOAT_IMMEDIATE" : {
             "keyword" : "addif",
             "args" : {
-                "source1" : "reg",
+                "source" : "reg",
                 "immediate_value" : "float",
                 "destination" : "reg"
             }
         },
-        "SUB_IMMEDIATE_FLOAT" : {
+        "SUB_FLOAT_IMMEDIATE" : {
             "keyword" : "subif",
             "args" : {
-                "source1" : "reg",
+                "source" : "reg",
                 "immediate_value" : "float",
                 "destination" : "reg"
             }
         },
-        "DIV_IMMEDIATE_FLOAT" : {
+        "DIV_FLOAT_IMMEDIATE" : {
             "keyword" : "divif",
             "args" : {
-                "source1" : "reg",
+                "source" : "reg",
                 "immediate_value" : "float",
                 "destination" : "reg"
             }
         },
-        "MULT_IMMEDIATE_FLOAT" : {
+        "MULT_FLOAT_IMMEDIATE" : {
             "keyword" : "mulif",
             "args" : {
-                "source1" : "reg",
+                "source" : "reg",
                 "immediate_value" : "float",
                 "destination" : "reg"
             }
@@ -296,19 +296,19 @@
                 "jump_address" : "addr"
             }
         },
-        "JUMP_EQ" : {
+        "JUMP_EQUAL" : {
             "keyword" : "je",
             "args" : {
                 "jump_address" : "addr"
             }
         },
-        "JUMP_LT" : {
+        "JUMP_LESS_THAN" : {
             "keyword" : "jlt",
             "args" : {
                 "jump_address" : "addr"
             }
         },
-        "JUMP_GT" : {
+        "JUMP_GREATER_THAN" : {
             "keyword" : "jgt",
             "args" : {
                 "jump_address" : "addr"
@@ -317,31 +317,31 @@
         "JUMP_REGISTER" : {
             "keyword" : "jmpr",
             "args" : {
-                "jump_address" : "reg"
+                "jump_register" : "reg"
             }
         },
         "JUMP_REGISTER_ZERO" : {
             "keyword" : "jzr",
             "args" : {
-                "jump_address" : "reg"
+                "jump_register" : "reg"
             }
         },
-        "JUMP_REGISTER_EQ" : {
+        "JUMP_REGISTER_EQUAL" : {
             "keyword" : "jer",
             "args" : {
-                "jump_address" : "reg"
+                "jump_register" : "reg"
             }
         },
-        "JUMP_REGISTER_LT" : {
+        "JUMP_REGISTER_LESS_THAN" : {
             "keyword" : "jltr",
             "args" : {
-                "jump_address" : "reg"
+                "jump_register" : "reg"
             }
         },
-        "JUMP_REGISTER_GT" : {
+        "JUMP_REGISTER_GREATER_THAN" : {
             "keyword" : "jgtr",
             "args" : {
-                "jump_address" : "reg"
+                "jump_register" : "reg"
             }
         },
         "COMPARE" : {

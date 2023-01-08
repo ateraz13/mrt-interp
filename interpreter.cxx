@@ -56,261 +56,280 @@ using Interpreter = Interpreter;
 // TODO: The arithmetic instruction need to raise flags!
 // TODO: Go through all the instructions and verify they are implemented
 // correctly.
+//
 
-void VM::callbacks::nop_cb(Interpreter &interp) {}
+template <uint8_t T> using PL = parameters::ParameterList<T>;
+using OP = Opcodes;
 
-void VM::callbacks::push_cb(Interpreter &interp, RegID regid) {
-  interp.m_mb.push_register_to_stack(regid);
+void VM::callbacks::nop_cb(Interpreter &interp, const PL<OP::NOP> &) {}
+
+void VM::callbacks::push_cb(Interpreter &interp, const PL<OP::PUSH_STACK> &p) {
+  interp.m_mb.push_register_to_stack(p.source);
 }
 
-void VM::callbacks::pushf_cb(Interpreter &interp, FL_RegID regid) {
-  interp.m_mb.push_float_register_to_stack(regid);
+void VM::callbacks::pushf_cb(Interpreter &interp,
+                             const PL<OP::PUSH_FLOAT_STACK> &p) {
+  interp.m_mb.push_float_register_to_stack(p.source);
 }
 
-void VM::callbacks::pop_cb(Interpreter &interp, RegID regid) {
-  interp.m_mb.pop_register_from_stack(regid);
+void VM::callbacks::pop_cb(Interpreter &interp, const PL<OP::POP_STACK> &p) {
+  interp.m_mb.pop_register_from_stack(p.destination);
 }
 
-void VM::callbacks::popf_cb(Interpreter &interp, FL_RegID regid) {
-  interp.m_mb.pop_float_register_from_stack(regid);
+void VM::callbacks::popf_cb(Interpreter &interp,
+                            const PL<OP::POP_FLOAT_STACK> &p) {
+  interp.m_mb.pop_float_register_from_stack(p.destination);
 }
 
-void VM::callbacks::ld_cb(Interpreter &interp, MemPtr source,
-                          RegID destination) {
-  interp.m_mb.gp_regs_32[destination] =
-      *reinterpret_cast<uint32_t *>(&interp.m_mb.memory[source]);
+void VM::callbacks::ld_cb(Interpreter &interp, const PL<OP::LOAD> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      *reinterpret_cast<uint32_t *>(&interp.m_mb.memory[p.source]);
 }
 
-void VM::callbacks::lb_cb(Interpreter &interp, MemPtr source,
-                          RegID destination) {
-  interp.m_mb.gp_regs_32[destination] =
-      *reinterpret_cast<uint8_t *>(&interp.m_mb.memory[source]);
+void VM::callbacks::lb_cb(Interpreter &interp, const PL<OP::LOAD_BYTE> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      *reinterpret_cast<uint8_t *>(&interp.m_mb.memory[p.source]);
 }
 
-void VM::callbacks::lhw_cb(Interpreter &interp, MemPtr source,
-                           RegID destination) {
-  interp.m_mb.gp_regs_32[destination] =
-      *reinterpret_cast<uint16_t *>(&interp.m_mb.memory[source]);
+void VM::callbacks::lhw_cb(Interpreter &interp,
+                           const PL<OP::LOAD_HALF_WORD> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      *reinterpret_cast<uint16_t *>(&interp.m_mb.memory[p.source]);
 }
 
-void VM::callbacks::ldi_cb(Interpreter &interp, uint32_t val, RegID regid) {
-  interp.m_mb.gp_regs_32[regid] = val;
+void VM::callbacks::ldi_cb(Interpreter &interp,
+                           const PL<OP::LOAD_IMMEDIATE> &p) {
+  interp.m_mb.gp_regs_32[p.destination] = p.immediate_value;
 }
 
-void VM::callbacks::lbi_cb(Interpreter &interp, uint8_t val, RegID regid) {
-  interp.m_mb.gp_regs_32[regid] = val;
+void VM::callbacks::lbi_cb(Interpreter &interp,
+                           const PL<OP::LOAD_BYTE_IMMEDIATE> &p) {
+  interp.m_mb.gp_regs_32[p.destination] = p.immediate_value;
 }
 
-void VM::callbacks::lhwi_cb(Interpreter &interp, uint16_t val, RegID regid) {
-  interp.m_mb.gp_regs_32[regid] = val;
+void VM::callbacks::lhwi_cb(Interpreter &interp,
+                            const PL<OP::LOAD_HALF_WORD_IMMEDIATE> &p) {
+  interp.m_mb.gp_regs_32[p.destination] = p.immediate_value;
 }
 
-void VM::callbacks::lf_cb(Interpreter &interp, MemPtr ptr, RegID regid) {
-  interp.m_mb.fl_regs_32[regid] = interp.m_mb.memory[ptr];
+void VM::callbacks::lf_cb(Interpreter &interp, const PL<OP::LOAD_FLOAT> &p) {
+  interp.m_mb.fl_regs_32[p.destination] = interp.m_mb.memory[p.source];
 }
 
-void VM::callbacks::lfi_cb(Interpreter &interp, float val, RegID regid) {
-  interp.m_mb.fl_regs_32[regid] = val;
+void VM::callbacks::lfi_cb(Interpreter &interp,
+                           const PL<OP::LOAD_FLOAT_IMMEDIATE> &p) {
+  interp.m_mb.fl_regs_32[p.destination] = p.immediate_value;
 }
 
-void VM::callbacks::st_cb(Interpreter &interp, RegID regid, MemPtr ptr) {
-  interp.m_mb.memory[ptr] = interp.m_mb.gp_regs_32[regid];
+void VM::callbacks::st_cb(Interpreter &interp, const PL<OP::STORE> &p) {
+  interp.m_mb.memory[p.destination] = interp.m_mb.gp_regs_32[p.source];
 }
 
-void VM::callbacks::sb_cb(Interpreter &interp, RegID regid, MemPtr ptr) {
-  interp.m_mb.memory[ptr] =
-      static_cast<uint8_t>(interp.m_mb.gp_regs_32[regid] & 0xff);
+void VM::callbacks::sb_cb(Interpreter &interp, const PL<OP::STORE_BYTE> &p) {
+  interp.m_mb.memory[p.destination] =
+      static_cast<uint8_t>(interp.m_mb.gp_regs_32[p.source] & 0xff);
 }
 
-void VM::callbacks::shw_cb(Interpreter &interp, RegID regid, MemPtr ptr) {
-  interp.m_mb.memory[ptr] =
-      static_cast<uint16_t>(interp.m_mb.gp_regs_32[regid] & 0xffff);
+void VM::callbacks::shw_cb(Interpreter &interp,
+                           const PL<OP::STORE_HALF_WORD> &p) {
+  interp.m_mb.memory[p.destination] =
+      static_cast<uint16_t>(interp.m_mb.gp_regs_32[p.source] & 0xffff);
 }
 
-void VM::callbacks::sf_cb(Interpreter &interp, RegID regid, MemPtr ptr) {
-  interp.m_mb.memory[ptr] = interp.m_mb.fl_regs_32[regid];
+void VM::callbacks::sf_cb(Interpreter &interp, const PL<OP::STORE_FLOAT> &p) {
+  interp.m_mb.memory[p.destination] = interp.m_mb.fl_regs_32[p.source];
 }
 
-void VM::callbacks::sll_cb(Interpreter &interp, RegID reg, RegID shift_by_reg,
-                           RegID dest_reg) {
-  interp.m_mb.gp_regs_32[dest_reg] = interp.m_mb.gp_regs_32[reg]
-                                     << interp.m_mb.gp_regs_32[shift_by_reg];
+void VM::callbacks::sll_cb(Interpreter &interp, const PL<OP::SHIFT_LEFT> &p) {
+  interp.m_mb.gp_regs_32[p.destination] = interp.m_mb.gp_regs_32[p.source]
+                                          << interp.m_mb.gp_regs_32[p.shift_by];
 }
 
-void VM::callbacks::srl_cb(Interpreter &interp, RegID reg, RegID shift_by_reg,
-                           RegID dest_reg) {
-  interp.m_mb.gp_regs_32[dest_reg] =
-      interp.m_mb.gp_regs_32[reg] >> interp.m_mb.gp_regs_32[shift_by_reg];
+void VM::callbacks::srl_cb(Interpreter &interp, const PL<OP::SHIFT_RIGHT> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      interp.m_mb.gp_regs_32[p.source] >> interp.m_mb.gp_regs_32[p.shift_by];
 }
 
-void VM::callbacks::slli_cb(Interpreter &interp, RegID reg1, uint32_t shift_by,
-                            RegID dest_reg) {
-  interp.m_mb.gp_regs_32[dest_reg] = interp.m_mb.gp_regs_32[reg1] << shift_by;
+void VM::callbacks::slli_cb(Interpreter &interp,
+                            const PL<OP::SHIFT_IMMEDIATE_LEFT> &p) {
+  interp.m_mb.gp_regs_32[p.destination] = interp.m_mb.gp_regs_32[p.source]
+                                          << p.shift_by;
 }
 
-void VM::callbacks::srli_cb(Interpreter &interp, RegID reg1, uint32_t shift_by,
-                            RegID dest_reg) {
-  interp.m_mb.gp_regs_32[dest_reg] = interp.m_mb.gp_regs_32[reg1] >> shift_by;
+void VM::callbacks::srli_cb(Interpreter &interp,
+                            const PL<OP::SHIFT_IMMEDIATE_RIGHT> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      interp.m_mb.gp_regs_32[p.source] >> p.shift_by;
 }
 
-void VM::callbacks::add_cb(Interpreter &interp, RegID reg1, RegID reg2,
-                           RegID dest_reg) {
-  interp.m_mb.gp_regs_32[dest_reg] =
-      interp.m_mb.gp_regs_32[reg1] + interp.m_mb.gp_regs_32[reg2];
+void VM::callbacks::add_cb(Interpreter &interp, const PL<OP::ADD_INT> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      interp.m_mb.gp_regs_32[p.source1] + interp.m_mb.gp_regs_32[p.source2];
 }
 
-void VM::callbacks::addi_cb(Interpreter &interp, RegID reg1, uint32_t imm_val,
-                            RegID dest_reg) {
-  interp.m_mb.gp_regs_32[dest_reg] = interp.m_mb.gp_regs_32[reg1] + imm_val;
+void VM::callbacks::addi_cb(Interpreter &interp,
+                            const PL<OP::ADD_INT_IMMEDIATE> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      interp.m_mb.gp_regs_32[p.source] + p.immediate_value;
 }
 
-void VM::callbacks::sub_cb(Interpreter &interp, RegID reg1, RegID reg2,
-                           RegID dest_reg) {
-  interp.m_mb.gp_regs_32[dest_reg] =
-      interp.m_mb.gp_regs_32[reg1] - interp.m_mb.gp_regs_32[reg2];
+void VM::callbacks::sub_cb(Interpreter &interp, const PL<OP::SUB_INT> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      interp.m_mb.gp_regs_32[p.source1] - interp.m_mb.gp_regs_32[p.source2];
 }
 
-void VM::callbacks::subi_cb(Interpreter &interp, RegID reg1, uint32_t imm_val,
-                            RegID dest_reg) {
-  interp.m_mb.gp_regs_32[dest_reg] = interp.m_mb.gp_regs_32[reg1] - imm_val;
+void VM::callbacks::subi_cb(Interpreter &interp,
+                            const PL<OP::SUB_INT_IMMEDIATE> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      interp.m_mb.gp_regs_32[p.source] - p.immediate_value;
 }
 
-void VM::callbacks::mul_cb(Interpreter &interp, RegID reg1, RegID reg2,
-                           RegID dest_reg) {
-  interp.m_mb.gp_regs_32[dest_reg] =
-      interp.m_mb.gp_regs_32[reg1] * interp.m_mb.gp_regs_32[reg2];
+void VM::callbacks::mul_cb(Interpreter &interp, const PL<OP::MULT_INT> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      interp.m_mb.gp_regs_32[p.source1] * interp.m_mb.gp_regs_32[p.source2];
 }
 
-void VM::callbacks::muli_cb(Interpreter &interp, RegID reg1, uint32_t imm_val,
-                            RegID dest_reg) {
-  interp.m_mb.gp_regs_32[dest_reg] = interp.m_mb.gp_regs_32[reg1] * imm_val;
+void VM::callbacks::muli_cb(Interpreter &interp,
+                            const PL<OP::MULT_INT_IMMEDIATE> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      interp.m_mb.gp_regs_32[p.source] * p.immediate_value;
 }
 
-void VM::callbacks::div_cb(Interpreter &interp, RegID reg1, RegID reg2,
-                           RegID dest_reg) {
-  interp.m_mb.gp_regs_32[dest_reg] =
-      interp.m_mb.gp_regs_32[reg1] / interp.m_mb.gp_regs_32[reg2];
+void VM::callbacks::div_cb(Interpreter &interp, const PL<OP::DIV_INT> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      interp.m_mb.gp_regs_32[p.source1] / interp.m_mb.gp_regs_32[p.source2];
 }
 
-void VM::callbacks::divi_cb(Interpreter &interp, RegID reg1, uint32_t imm_val,
-                            RegID dest_reg) {
-  interp.m_mb.gp_regs_32[dest_reg] = interp.m_mb.gp_regs_32[reg1] / imm_val;
+void VM::callbacks::divi_cb(Interpreter &interp,
+                            const PL<OP::DIV_INT_IMMEDIATE> &p) {
+  interp.m_mb.gp_regs_32[p.destination] =
+      interp.m_mb.gp_regs_32[p.source] / p.immediate_value;
 }
 
-void VM::callbacks::addf_cb(Interpreter &interp, RegID reg1, RegID reg2,
-                            RegID dest_reg) {
+void VM::callbacks::addf_cb(Interpreter &interp,
+                            const PL<OP::ADD_FLOAT_IMMEIDATE> &p) {
   interp.m_mb.fl_regs_32[dest_reg] =
       interp.m_mb.fl_regs_32[reg1] + interp.m_mb.fl_regs_32[reg2];
 }
 
-void VM::callbacks::addif_cb(Interpreter &interp, RegID reg1, float imm_val,
-                             RegID dest_reg) {
-  interp.m_mb.fl_regs_32[dest_reg] = interp.m_mb.fl_regs_32[reg1] + imm_val;
+void VM::callbacks::addif_cb(Interpreter &interp,
+                             const PL<OP::ADD_FLOAT_IMMEDIATE> &p) {
+  interp.m_mb.fl_regs_32[p.destination] =
+      interp.m_mb.fl_regs_32[p.source] + p.immediate_value;
 }
 
-void VM::callbacks::subf_cb(Interpreter &interp, FL_RegID reg1, FL_RegID reg2,
-                            FL_RegID dest_reg) {
-  interp.m_mb.fl_regs_32[dest_reg] =
-      interp.m_mb.fl_regs_32[reg1] - interp.m_mb.fl_regs_32[reg2];
+void VM::callbacks::subf_cb(Interpreter &interp, const PL<OP::SUB_FLOAT> &p) {
+  interp.m_mb.fl_regs_32[p.destination] =
+      interp.m_mb.fl_regs_32[p.source1] - interp.m_mb.fl_regs_32[p.source2];
 }
 
-void VM::callbacks::subif_cb(Interpreter &interp, FL_RegID reg1, float imm_val,
-                             FL_RegID dest_reg) {
-  interp.m_mb.fl_regs_32[dest_reg] = interp.m_mb.fl_regs_32[reg1] - imm_val;
+void VM::callbacks::subif_cb(Interpreter &interp,
+                             const PL<OP::SUB_FLOAT_IMMEDIATE> &p) {
+  interp.m_mb.fl_regs_32[p.destination] =
+      interp.m_mb.fl_regs_32[p.source] - p.immediate_val;
 }
 
-void VM::callbacks::mulf_cb(Interpreter &interp, FL_RegID reg1, RegID reg2,
-                            FL_RegID dest_reg) {
-  interp.m_mb.fl_regs_32[dest_reg] =
-      interp.m_mb.fl_regs_32[reg1] * interp.m_mb.fl_regs_32[reg2];
+void VM::callbacks::mulf_cb(Interpreter &interp, const PL<OP::MULT_FLOAT> &p) {
+  interp.m_mb.fl_regs_32[p.destination] =
+      interp.m_mb.fl_regs_32[p.source1] * interp.m_mb.fl_regs_32[p.source2];
 }
 
-void VM::callbacks::mulif_cb(Interpreter &interp, FL_RegID reg1, float imm_val,
-                             FL_RegID dest_reg) {
-  interp.m_mb.fl_regs_32[dest_reg] = interp.m_mb.fl_regs_32[reg1] * imm_val;
+void VM::callbacks::mulif_cb(Interpreter &interp,
+                             const PL<OP::MULT_FLOAT_IMMEDIATE> &p) {
+  interp.m_mb.fl_regs_32[p.destination] =
+      interp.m_mb.fl_regs_32[p.source] * p.immediate_value;
 }
 
-void VM::callbacks::divf_cb(Interpreter &interp, FL_RegID reg1, FL_RegID reg2,
-                            FL_RegID dest_reg) {
-  interp.m_mb.fl_regs_32[dest_reg] =
-      interp.m_mb.fl_regs_32[reg1] / interp.m_mb.fl_regs_32[reg2];
+void VM::callbacks::divf_cb(Interpreter &interp, const PL<OP::DIV_FLOAT> &p) {
+  interp.m_mb.fl_regs_32[p.destination] =
+      interp.m_mb.fl_regs_32[p.source1] / interp.m_mb.fl_regs_32[p.source2];
 }
 
-void VM::callbacks::divif_cb(Interpreter &interp, FL_RegID reg1, float imm_val,
-                             FL_RegID dest_reg) {
-  interp.m_mb.fl_regs_32[dest_reg] = interp.m_mb.fl_regs_32[reg1] / imm_val;
+void VM::callbacks::divif_cb(Interpreter &interp,
+                             const PL<OP::DIV_FLOAT_IMMEDIATE> &p) {
+  interp.m_mb.fl_regs_32[p.destination] =
+      interp.m_mb.fl_regs_32[p.source] / p.immediate_value;
 }
 
-void VM::callbacks::jmp_cb(Interpreter &interp, MemPtr addr) {
+void VM::callbacks::jmp_cb(Interpreter &interp, const PL<OP::JUMP> &p) {
   check_mem_address_with_throw(addr);
-  interp.m_mb.gp_regs_32[MemoryBank::PROGRAM_COUNTER_REG] = addr;
+  interp.m_mb.gp_regs_32[MemoryBank::PROGRAM_COUNTER_REG] = p.jump_address;
 }
 
 // NOTE: Jump zero is the same thing as jump equal because the comparison uses
 // subtraction to compare two values and if the result is zero that means the
 // values are equal.
-void VM::callbacks::jz_cb(Interpreter &interp, MemPtr addr) {
+void VM::callbacks::jz_cb(Interpreter &interp, const PL<OP::JUMP_ZERO> &p) {
   if (interp.m_mb.check_flag(MemoryBank::ZERO_FLAG_BIT)) {
-    jmp_cb(interp, addr);
+    jmp_cb(interp, p.jump_address);
   }
 }
 
-void VM::callbacks::jzr_cb(Interpreter &interp, RegID regid) {
-  jz_cb(interp, interp.m_mb.gp_regs_32[regid]);
+void VM::callbacks::jzr_cb(Interpreter &interp,
+                           const PL<OP::JUMP_REGISTER_ZERO> &p) {
+  jz_cb(interp, interp.m_mb.gp_regs_32[p.jump_register]);
 }
 
-void VM::callbacks::je_cb(Interpreter &interp, MemPtr addr) {
+void VM::callbacks::je_cb(Interpreter &interp, const PL<OP::JUMP_EQUAL> &p) {
   if (interp.m_mb.check_flag(MemoryBank::ZERO_FLAG_BIT)) {
-    jmp_cb(interp, addr);
+    jmp_cb(interp, {p.jump_address});
   }
 }
 
-void VM::callbacks::jer_cb(Interpreter &interp, RegID regid) {
-  je_cb(interp, interp.m_mb.gp_regs_32[regid]);
+void VM::callbacks::jer_cb(Interpreter &interp,
+                           const PL<OP::JUMP_REGISTER_EQUAL> &p) {
+  je_cb(interp, interp.m_mb.gp_regs_32[p.jump_register]);
 }
 
-void VM::callbacks::jlt_cb(Interpreter &interp, MemPtr addr) {
+void VM::callbacks::jlt_cb(Interpreter &interp,
+                           const PL<OP::JUMP_LESS_THAN> &p) {
   if (interp.m_mb.check_flag(MemoryBank::ZERO_FLAG_BIT) ||
       interp.m_mb.check_flag(MemoryBank::SIGN_FLAG_BIT) !=
           interp.m_mb.check_flag(MemoryBank::OVERFLOW_FLAG_BIT)) {
-    jmp_cb(interp, addr);
+    jmp_cb(interp, {p.jump_address});
   }
 }
 
-void VM::callbacks::jltr_cb(Interpreter &interp, RegID regid) {
-  jlt_cb(interp, interp.m_mb.gp_regs_32[regid]);
+void VM::callbacks::jltr_cb(Interpreter &interp,
+                            const PL<OP::JUMP_REGISTER_LESS_THAN> &p) {
+  jlt_cb(interp, interp.m_mb.gp_regs_32[p.jump_register]);
 }
 
-void VM::callbacks::jgt_cb(Interpreter &interp, MemPtr addr) {
+void VM::callbacks::jgt_cb(Interpreter &interp,
+                           const PL<OP::JUMP_GREATER_THAN> &p) {
   if (interp.m_mb.check_flag(MemoryBank::ZERO_FLAG_BIT) &&
       interp.m_mb.check_flag(MemoryBank::SIGN_FLAG_BIT) ==
           interp.m_mb.check_flag(MemoryBank::OVERFLOW_FLAG_BIT)) {
-    jmp_cb(interp, addr);
+    jmp_cb(interp, {p.jump_address});
   }
 }
 
-void VM::callbacks::jgtr_cb(Interpreter &interp, RegID regid) {
-  jgt_cb(interp, interp.m_mb.gp_regs_32[regid]);
+void VM::callbacks::jgtr_cb(Interpreter &interp,
+                            const PL<OP::JUMP_REGISTER_GREATER_THAN> &p) {
+  jgt_cb(interp, interp.m_mb.gp_regs_32[p.jump_register]);
 }
 
-void VM::callbacks::halt_cb(Interpreter &interp) { interp.stop(); }
+void VM::callbacks::halt_cb(Interpreter &interp, const PL<OP::HALT> &) {
+  interp.stop();
+}
 
 // NOTE: In order to load jump to instruction we need to copy the instructions
 // into memory first.
 
-void VM::callbacks::jmpr_cb(Interpreter &interp, RegID regid) {
-  check_mem_address_with_throw(interp.m_mb.gp_regs_32[regid]);
+void VM::callbacks::jmpr_cb(Interpreter &interp,
+                            const PL<OP::JUMP_REGISTER> &p) {
+  check_mem_address_with_throw(interp.m_mb.gp_regs_32[p.jump_register]);
   interp.m_mb.gp_regs_32[MemoryBank::PROGRAM_COUNTER_REG] =
-      interp.m_mb.gp_regs_32[regid];
+      interp.m_mb.gp_regs_32[p.jump_register];
 }
 
 // NOTE: Jump zero is the same thing as jump equal because the comparison uses
 // subtraction to compare two values and if the result is zero that means the
 // values are equal.
 
-void VM::callbacks::cmp_cb(Interpreter &interp, RegID reg1, RegID reg2) {
-  uint64_t res = (uint64_t)interp.m_mb.fl_regs_32[reg1] -
-                 (uint64_t)interp.m_mb.fl_regs_32[reg2];
+void VM::callbacks::cmp_cb(Interpreter &interp, const PL<OP::COMPARE> &p) {
+  uint64_t res = (uint64_t)interp.m_mb.fl_regs_32[p.register1] -
+                 (uint64_t)interp.m_mb.fl_regs_32[p.register2];
 
   if (res > INT_MIN || res < INT_MAX) {
     interp.m_mb.set_flag(MemoryBank::OVERFLOW_FLAG_BIT);
@@ -327,12 +346,13 @@ void VM::callbacks::cmp_cb(Interpreter &interp, RegID reg1, RegID reg2) {
   }
 }
 
-void VM::callbacks::cmpf_cb(Interpreter &interp, RegID reg1, RegID reg2) {
+void VM::callbacks::cmpf_cb(Interpreter &interp,
+                            const PL<OP::COMPARE_FLOAT> &p) {
   float res = 0.0f;
   try {
     res = boost::numeric::converter<float, double>::convert(
-        (double)interp.m_mb.fl_regs_32[reg1] -
-        (double)interp.m_mb.fl_regs_32[reg2]);
+        (double)interp.m_mb.fl_regs_32[p.register1] -
+        (double)interp.m_mb.fl_regs_32[p.register2]);
   } catch (boost::numeric::positive_overflow const &) {
     interp.m_mb.set_flag(MemoryBank::OVERFLOW_FLAG_BIT);
   } catch (boost::numeric::negative_overflow const &) {
@@ -362,7 +382,6 @@ void check_bytes_ahead(MemoryBank::MemoryBuffer &buffer, size_t index,
 }
 
 RegID read_valid_regid(MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
-
   uint8_t rid = buffer[pc];
 
   if (rid < 0 && rid > MemoryBank::GP_REGS_32_COUNT) {
@@ -383,7 +402,6 @@ RegID read_valid_float_regid(MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
 }
 
 MemPtr read_valid_mem_address(MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
-
   check_bytes_ahead(buffer, pc, sizeof(MemPtr));
   auto mem_ptr = *reinterpret_cast<MemPtr *>(&buffer[pc]);
   // std::cout << "MEM ADDRESS READ: " << mem_ptr << std::endl;

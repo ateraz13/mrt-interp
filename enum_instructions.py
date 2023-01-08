@@ -167,21 +167,31 @@ class InstructionGenerator(CodeGenerator):
                         self.generate_opcode_enumerations(),
                     ]),
                     self.generate_instruction_keyword_array(),
-                    self.generate_parameter_lists_array(),
-                    self.generate_namespace("callbacks", [
-                        self.generate_callback_declarations(),
-                    ]),
+                    # self.generate_parameter_lists_array(),
                     self.generate_namespace("parameters", [
                         self.generate_parameter_list_types(),
                         self.generate_parameter_variant(),
                         self.generate_parameter_parser()
-                    ])
+                    ]),
+                    self.generate_namespace("callbacks", [
+                        self.generate_callback_declarations(),
+                    ]),
                 ])
             ])
         ])
+
+        source_file_src = self.flatten([
+            self.generate_instruction_executor()
+        ])
+
         self.header_file.write(header_file_src)
         self.header_file.flush()
         self.header_file.close()
+
+        self.source_file.write(source_file_src)
+        self.source_file.flush();
+        self.source_file.close();
+
         self.generate_instruction_executor()
 
     def compile_parameter_variaties(self):
@@ -256,16 +266,14 @@ class InstructionGenerator(CodeGenerator):
         return ""
 
     def generate_callback_declarations(self):
-        callback_declarations = ""
 
-        for i in self.data["instructions"]:
-            keyword = self.data["instructions"][i]["keyword"]
-            callback_declarations += ("\tvoid " + keyword + "_cb" + "(Interpreter& vm")
-            for arg_name in self.data["instructions"][i]["args"].keys():
-                arg_type = self.data["instructions"][i]["args"][arg_name]
-                callback_declarations += (", " + self.parameter_data_types[arg_type] + " " + arg_name)
+        cb = """
+        void %s_cb(Interpreter& vm, const parameters::ParameterList<VM::OpCodes::%s>& params);
+        """
 
-            callback_declarations += (");\n\n")
+        callback_declarations = self.flatten([
+            cb % (self.data["instructions"][opcode]["keyword"], opcode) for opcode in self.data["instructions"]
+        ])
 
         callback_declarations += "void run_next_instruction (Interpreter &interp);"
         return callback_declarations
@@ -330,9 +338,8 @@ class InstructionGenerator(CodeGenerator):
              case %  (opcode, opcode, self.data["instructions"][opcode]["keyword"] + "_cb") for opcode in self.data["instructions"]
         ])
 
-        self.source_file.write(run_next_instruction_code % switch_cases_code)
-        self.source_file.flush();
-        self.source_file.close();
+        return run_next_instruction_code % switch_cases_code
+
 
 # We might use stdin to send the code directly to the process and than let it write it to a file
 
