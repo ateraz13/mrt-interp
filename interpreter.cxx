@@ -58,8 +58,8 @@ using Interpreter = Interpreter;
 // correctly.
 //
 
-template <uint8_t T> using PL = parameters::ParameterList<T>;
-using OP = Opcodes;
+template <uint8_t T> using PL = VM::parameters::ParameterList<T>;
+using OP = VM::OpCodes;
 
 void VM::callbacks::nop_cb(Interpreter &interp, const PL<OP::NOP> &) {}
 
@@ -206,10 +206,9 @@ void VM::callbacks::divi_cb(Interpreter &interp,
       interp.m_mb.gp_regs_32[p.source] / p.immediate_value;
 }
 
-void VM::callbacks::addf_cb(Interpreter &interp,
-                            const PL<OP::ADD_FLOAT_IMMEIDATE> &p) {
-  interp.m_mb.fl_regs_32[dest_reg] =
-      interp.m_mb.fl_regs_32[reg1] + interp.m_mb.fl_regs_32[reg2];
+void VM::callbacks::addf_cb(Interpreter &interp, const PL<OP::ADD_FLOAT> &p) {
+  interp.m_mb.fl_regs_32[p.destination] =
+      interp.m_mb.fl_regs_32[p.source1] + interp.m_mb.fl_regs_32[p.source2];
 }
 
 void VM::callbacks::addif_cb(Interpreter &interp,
@@ -226,7 +225,7 @@ void VM::callbacks::subf_cb(Interpreter &interp, const PL<OP::SUB_FLOAT> &p) {
 void VM::callbacks::subif_cb(Interpreter &interp,
                              const PL<OP::SUB_FLOAT_IMMEDIATE> &p) {
   interp.m_mb.fl_regs_32[p.destination] =
-      interp.m_mb.fl_regs_32[p.source] - p.immediate_val;
+      interp.m_mb.fl_regs_32[p.source] - p.immediate_value;
 }
 
 void VM::callbacks::mulf_cb(Interpreter &interp, const PL<OP::MULT_FLOAT> &p) {
@@ -252,7 +251,7 @@ void VM::callbacks::divif_cb(Interpreter &interp,
 }
 
 void VM::callbacks::jmp_cb(Interpreter &interp, const PL<OP::JUMP> &p) {
-  check_mem_address_with_throw(addr);
+  check_mem_address_with_throw(p.jump_address);
   interp.m_mb.gp_regs_32[MemoryBank::PROGRAM_COUNTER_REG] = p.jump_address;
 }
 
@@ -261,13 +260,13 @@ void VM::callbacks::jmp_cb(Interpreter &interp, const PL<OP::JUMP> &p) {
 // values are equal.
 void VM::callbacks::jz_cb(Interpreter &interp, const PL<OP::JUMP_ZERO> &p) {
   if (interp.m_mb.check_flag(MemoryBank::ZERO_FLAG_BIT)) {
-    jmp_cb(interp, p.jump_address);
+    jmp_cb(interp, {p.jump_address});
   }
 }
 
 void VM::callbacks::jzr_cb(Interpreter &interp,
                            const PL<OP::JUMP_REGISTER_ZERO> &p) {
-  jz_cb(interp, interp.m_mb.gp_regs_32[p.jump_register]);
+  jz_cb(interp, {interp.m_mb.gp_regs_32[p.jump_register]});
 }
 
 void VM::callbacks::je_cb(Interpreter &interp, const PL<OP::JUMP_EQUAL> &p) {
@@ -278,7 +277,7 @@ void VM::callbacks::je_cb(Interpreter &interp, const PL<OP::JUMP_EQUAL> &p) {
 
 void VM::callbacks::jer_cb(Interpreter &interp,
                            const PL<OP::JUMP_REGISTER_EQUAL> &p) {
-  je_cb(interp, interp.m_mb.gp_regs_32[p.jump_register]);
+  je_cb(interp, {interp.m_mb.gp_regs_32[p.jump_register]});
 }
 
 void VM::callbacks::jlt_cb(Interpreter &interp,
@@ -292,7 +291,7 @@ void VM::callbacks::jlt_cb(Interpreter &interp,
 
 void VM::callbacks::jltr_cb(Interpreter &interp,
                             const PL<OP::JUMP_REGISTER_LESS_THAN> &p) {
-  jlt_cb(interp, interp.m_mb.gp_regs_32[p.jump_register]);
+  jlt_cb(interp, {interp.m_mb.gp_regs_32[p.jump_register]});
 }
 
 void VM::callbacks::jgt_cb(Interpreter &interp,
@@ -306,7 +305,7 @@ void VM::callbacks::jgt_cb(Interpreter &interp,
 
 void VM::callbacks::jgtr_cb(Interpreter &interp,
                             const PL<OP::JUMP_REGISTER_GREATER_THAN> &p) {
-  jgt_cb(interp, interp.m_mb.gp_regs_32[p.jump_register]);
+  jgt_cb(interp, {interp.m_mb.gp_regs_32[p.jump_register]});
 }
 
 void VM::callbacks::halt_cb(Interpreter &interp, const PL<OP::HALT> &) {

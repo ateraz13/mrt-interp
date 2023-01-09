@@ -166,22 +166,24 @@ class InstructionGenerator(CodeGenerator):
                     self.generate_struct("OpCodes", [
                         self.generate_opcode_enumerations(),
                     ]),
-                    self.generate_instruction_keyword_array(),
-                    # self.generate_parameter_lists_array(),
+                    self.generate_instruction_keyword_array_define(),
                     self.generate_namespace("parameters", [
                         self.generate_parameter_list_types(),
-                        self.generate_parameter_variant(),
-                        self.generate_parameter_parser()
+                        self.generate_parameter_variant_alias(),
                     ]),
                     self.generate_namespace("callbacks", [
                         self.generate_callback_declarations(),
                     ]),
+                    self.generate_vm_declarations()
                 ])
             ])
         ])
 
         source_file_src = self.flatten([
-            self.generate_instruction_executor()
+            self.generate_instruction_executor(),
+            self.generate_instruction_keyword_array(),
+            self.generate_parameter_parse_functions(),
+            self.generate_parameter_parser()
         ])
 
         self.header_file.write(header_file_src)
@@ -207,7 +209,10 @@ class InstructionGenerator(CodeGenerator):
         ## the same amount of memory anyway once they are part of a variant. Unless there is a good reason not to, generating two paramter lists with
         ## the same parameter types shouldn't be a problem and as a added benefit we can name our parameters accordingly instead of using names like "arg1, arg2".
 
-        structs += "template<uint8_t OpCode> ParameterList<OpCode> parse (MemoryBank::MemoryBuffer &buffer, uint32_t &pc);"
+        structs += """
+        template<uint8_t OpCode>
+        ParameterList<OpCode> parse (MemoryBank::MemoryBuffer &buffer, uint32_t &pc);
+        """
 
         for i, pv in enumerate(self.parameter_variaties):
             opcode = "OpCodes::"+self.opcode_enums[i]
@@ -222,17 +227,45 @@ class InstructionGenerator(CodeGenerator):
 
             structs += """\n
                 template<>
-                ParameterList<%s> parse<%s>(MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
-                    ParameterList<%s> args;
+                ParameterList<%s> parse<%s>(MemoryBank::MemoryBuffer &buffer, uint32_t &pc);""" % (opcode, opcode)
+
+        return structs
+
+    def generate_parameter_parse_functions(self):
+        structs = self.generate_struct_template("ParameterList", "uint8_t", "")
+
+        ## FIXME Because we have compiled all the parameter lists to only the unique ones now we need to find a way
+        ## to map OpCode to its parameter type.
+        ##
+        ## TODO: Instead of compiling to unique parameter lists we can just generate all the parameter lists they will occupy
+        ## the same amount of memory anyway once they are part of a variant. Unless there is a good reason not to, generating two paramter lists with
+        ## the same parameter types shouldn't be a problem and as a added benefit we can name our parameters accordingly instead of using names like "arg1, arg2".
+
+
+        structs += """
+        template<uint8_t OpCode>
+        VM::parameters::ParameterList<OpCode> VM::parameters::parse (MemoryBank::MemoryBuffer &buffer, uint32_t &pc);
+        """
+
+        for i, pv in enumerate(self.parameter_variaties):
+            opcode = "VM::OpCodes::"+self.opcode_enums[i]
+            parse_args = ["args." + name  + " = " + self.parse_functions[data_type] + "(buffer, pc);\n" for name, data_type in zip(pv.keys(), pv.values())]
+
+            structs += """\n
+                template<>
+                VM::parameters::ParameterList<%s> VM::parameters::parse<%s>(MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
+                    VM::parameters::ParameterList<%s> args;
                     %s
+                    pc += sizeof(ParameterList<%s>);
                     return args;
                 }
-            """ % (opcode, opcode, opcode, self.flatten(parse_args))
+            """ % (opcode, opcode, opcode, self.flatten(parse_args), opcode)
 
 
         return structs
 
-    def generate_parameter_variant(self):
+
+    def generate_parameter_variant_alias(self):
         return "using ParameterListAny = std::variant<\n%s\n>;" \
                 % self.flatten(["ParameterList<OpCodes::"+self.opcode_enums[x]+">\n "
                                 for x in range(0, len(self.parameter_variaties))], separator=", ")
@@ -262,6 +295,13 @@ class InstructionGenerator(CodeGenerator):
 
         return self.generate_array("const char*", keyword_count, "instruction_keywords", instruction_keyword_str_literals)
 
+    def generate_instruction_keyword_array_define(self):
+        keyword_count = len(self.data["instructions"].keys())
+        source = """
+        extern std::array<const char*, %d> instruction_keywords;
+        \n""" % keyword_count
+        return source
+
     def generate_parameter_lists_array(self):
         return ""
 
@@ -275,19 +315,23 @@ class InstructionGenerator(CodeGenerator):
             cb % (self.data["instructions"][opcode]["keyword"], opcode) for opcode in self.data["instructions"]
         ])
 
-        callback_declarations += "void run_next_instruction (Interpreter &interp);"
         return callback_declarations
+
+    def generate_vm_declarations(self):
+        return "void run_next_instruction (Interpreter &interp);"
 
     def generate_parameter_parser(self):
         source = """\n
-        ParameterListAny parse_parameter(OpCode op, MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
+        VM::parameters::ParameterListAny parse_parameter(uint8_t op, MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
             switch(op) {
                 %s
+            default:
+                return VM::parameters::ParameterList<VM::OpCodes::NOP> {};
             }
         }
         """
 
-        case = "case OpCodes::%s: return parse<OpCodes::%s>(buffer, pc);"
+        case = "case VM::OpCodes::%s: return VM::parameters::parse<VM::OpCodes::%s>(buffer, pc);"
 
         cases = self.flatten([
             case % (opcode, opcode) for opcode in self.data["instructions"].keys()
@@ -301,7 +345,7 @@ class InstructionGenerator(CodeGenerator):
         run_next_instruction_code = """\
         #include "interpreter.hxx"
         #include "instructions.hxx"
-        #include <stdexept>
+        #include <stdexcept>
 
         void VM::run_next_instruction (Interpreter &interp) {
 
@@ -330,7 +374,7 @@ class InstructionGenerator(CodeGenerator):
         case = """\
         case VM::OpCodes::%s: {
             auto parameters = parameters::parse<VM::OpCodes::%s>(mem, pc);
-            %s(parameters);
+            VM::callbacks::%s(interp, parameters);
             break;
         };
         """

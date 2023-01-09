@@ -76,8 +76,7 @@ int main(int argc, char **argv) {
                                    0x00,
                                    0x00,
                                    0x00, /* ADDR: 255 = 0xff */
-
-                                   OPC::LOAD_IMMEDIATE_FLOAT,
+                                   OPC::LOAD_FLOAT_IMMEDIATE,
                                    0x00 /* FL_REG1 */,
                                    0xff,
                                    0xff,
