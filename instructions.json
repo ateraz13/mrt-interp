@@ -12,6 +12,10 @@
         "float" : "Floating-point value"
     },
     "instructions" : {
+        "INVALID" : {
+            "keyword" : "invalid",
+            "args" : {}
+        },
         "NOP" : {
             "keyword" : "nop",
             "args" : {}

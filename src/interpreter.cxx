@@ -61,6 +61,9 @@ using Interpreter = Interpreter;
 template <uint8_t T> using PL = VM::parameters::ParameterList<T>;
 using OP = VM::OpCodes;
 
+void VM::callbacks::invalid_cb(Interpreter &interp, const PL<OP::INVALID> &) {
+  throw std::runtime_error("Invalid instruction encountered!");
+}
 void VM::callbacks::nop_cb(Interpreter &interp, const PL<OP::NOP> &) {}
 
 void VM::callbacks::push_cb(Interpreter &interp, const PL<OP::PUSH_STACK> &p) {
