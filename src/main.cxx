@@ -53,36 +53,17 @@ int main(int argc, char **argv) {
 
   try {
 
+    // clang-format off
     VirtualMachine vm;
-    Interpreter::BytecodeBuffer bb{OPC::LOAD_IMMEDIATE,
-                                   0x01 /* REG1 */,
-                                   0x05,
-                                   0x00,
-                                   0x00,
-                                   0x00,
-                                   OPC::LOAD_IMMEDIATE,
-                                   0x02 /* REG1 */,
-                                   0x07,
-                                   0x00,
-                                   0x00,
-                                   0x00,
-                                   OPC::ADD_INT,
-                                   0x1,
-                                   0x2,
-                                   0x1, /* REG1 += REG2 */
-                                   OPC::STORE,
-                                   0x01,
-                                   /* REG1 */ 0xff,
-                                   0x00,
-                                   0x00,
-                                   0x00, /* ADDR: 255 = 0xff */
-                                   OPC::LOAD_FLOAT_IMMEDIATE,
-                                   0x00 /* FL_REG1 */,
-                                   0xff,
-                                   0xff,
-                                   0xff,
-                                   0xff,
-                                   OPC::HALT};
+    Interpreter::BytecodeBuffer bb{
+            OPC::LOAD_IMMEDIATE, 0x01 /* REG1 */, 0x05, 0x00, 0x00, 0x00,
+            OPC::LOAD_IMMEDIATE, 0x02 /* REG1 */, 0x07, 0x00, 0x00, 0x00,
+            OPC::ADD_INT, 0x1, 0x2, 0x1, /* REG1 += REG2 */
+            OPC::STORE, 0x01, /* REG1 */ 0xff, 0x00, 0x00, 0x00, /* ADDR: 255 = 0xff */
+            OPC::LOAD_FLOAT_IMMEDIATE, 0x00 /* FL_REG1 */, 0xff, 0xff, 0xff, 0xff,
+            OPC::HALT
+    };
+    // clang-format on
 
     vm.m_interp.start();
     vm.m_interp.load_program(bb);

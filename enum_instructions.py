@@ -112,8 +112,8 @@ class CodeGenerator:
 
 class InstructionGenerator(CodeGenerator):
 
-    header_filename = "./instructions.hxx"
-    source_filename = "./instructions.cxx"
+    header_filename = "./src/instructions.hxx"
+    source_filename = "./src/instructions.cxx"
     data_json_filename = ""
 
     data = None
@@ -245,7 +245,7 @@ class InstructionGenerator(CodeGenerator):
         structs += """
         template<uint8_t OpCode>
         VM::parameters::ParameterList<OpCode> VM::parameters::parse (MemoryBank::MemoryBuffer &buffer, uint32_t &pc);
-        """
+        \n"""
 
         for i, pv in enumerate(self.parameter_variaties):
             opcode = "VM::OpCodes::"+self.opcode_enums[i]
@@ -358,6 +358,8 @@ class InstructionGenerator(CodeGenerator):
             throw std::runtime_error("Cannot run next instruction, interpreter not running!");
         }
 
+        pc += 1;
+
         switch (opcode) {
             %s
             default:
@@ -373,13 +375,14 @@ class InstructionGenerator(CodeGenerator):
 
         case = """\
         case VM::OpCodes::%s: {
+            std::cout << "INSTRUCTION: %s" << std::endl;
             auto parameters = parameters::parse<VM::OpCodes::%s>(mem, pc);
             VM::callbacks::%s(interp, parameters);
             break;
         };
         """
         switch_cases_code = self.flatten([
-             case %  (opcode, opcode, self.data["instructions"][opcode]["keyword"] + "_cb") for opcode in self.data["instructions"]
+             case %  (opcode, opcode, opcode, self.data["instructions"][opcode]["keyword"] + "_cb") for opcode in self.data["instructions"]
         ])
 
         return run_next_instruction_code % switch_cases_code

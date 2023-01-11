@@ -8,11 +8,6 @@ set(CMAKE_CXX_STANDARD 20)
 
 # NOTE: We could link interpreter into an library.
 
-add_executable(interp main.cxx parse.cxx syntax.cxx instructions.cxx
-                      interpreter.cxx)
-set_property(TARGET interp PROPERTY CXX_STANDARD 20)
-target_link_libraries(interp PUBLIC ${Boost_LIBRARIES})
-target_include_directories(interp PUBLIC ${Boost_INCLUDE_DIRS})
+set(CMAKE_SOURCE_DIR ./src)
 
-add_executable(test_instructions test_instructions.cxx parse.cxx syntax.cxx
-                                 interpreter.cxx instructions.cxx)
+add_subdirectory(./src)
