@@ -4,6 +4,9 @@
 #include <boost/limits.hpp>
 #include <boost/numeric/conversion/converter.hpp>
 #include <climits>
+#include <cmath>
+
+#define DEBUG_EXTRA_INFO
 
 using OpCodes = VM::OpCodes;
 
@@ -108,6 +111,10 @@ void VM::callbacks::lhw_cb(Interpreter &interp,
 
 void VM::callbacks::ldi_cb(Interpreter &interp,
                            const PL<OP::LOAD_IMMEDIATE> &p) {
+#ifdef DEBUG_EXTRA_INFO
+  std::clog << "Loading immediate value (" << p.immediate_value
+            << ") into register R" << (int)p.destination << std::endl;
+#endif
   interp.m_mb.gp_regs_32[p.destination] = p.immediate_value;
 }
 
@@ -336,19 +343,42 @@ void VM::callbacks::jmpr_cb(Interpreter &interp,
 // values are equal.
 
 void VM::callbacks::cmp_cb(Interpreter &interp, const PL<OP::COMPARE> &p) {
-  uint64_t res = (uint64_t)interp.m_mb.fl_regs_32[p.register1] -
-                 (uint64_t)interp.m_mb.fl_regs_32[p.register2];
 
-  if (res > INT_MIN || res < INT_MAX) {
-    interp.m_mb.set_flag(MemoryBank::OVERFLOW_FLAG_BIT);
-  }
+  // FUN_FACT: When I first implemented this, instead of using the comparison
+  // operator I tried to implement it in terms of how CPU's compare numbers in
+  // hardware. The only thing that insterest me how I got to that idea in the
+  // first place.
 
-  if (res == 0.0f) {
+#ifdef DEBUG_EXTRA_INFO
+  std::clog << "Comparing registers "
+            << "R" << (int)p.register1 << " and "
+            << "R" << (int)p.register2 << std::endl;
+#endif
+  auto v1 = interp.m_mb.gp_regs_32[p.register1];
+  auto v2 = interp.m_mb.gp_regs_32[p.register2];
+
+  // NOTE: We are using signed integer, so how the hell is it suppose to be less
+  // than zero. See this is why you stop and think.
+
+  if (v1 == v2) {
+#ifdef DEBUG_EXTRA_INFO
+    std::clog << v1 << " = " << v2 << std::endl;
+#endif
+    // Set zero flag and unset sign flag
     interp.m_mb.set_flag(MemoryBank::ZERO_FLAG_BIT);
-  } else if (res > 0.0f) {
+    interp.m_mb.unset_flag(MemoryBank::SIGN_FLAG_BIT);
+  } else if (v1 > v2) {
+#ifdef DEBUG_EXTRA_INFO
+    std::clog << v1 << " > " << v2 << std::endl;
+#endif
+    // Unset zero flag and set sign flag
     interp.m_mb.unset_flag(MemoryBank::ZERO_FLAG_BIT);
     interp.m_mb.set_flag(MemoryBank::SIGN_FLAG_BIT);
   } else {
+#ifdef DEBUG_EXTRA_INFO
+    std::clog << v1 << " < " << v2 << std::endl;
+#endif
+    // Set unset flag and unset sign flag
     interp.m_mb.unset_flag(MemoryBank::ZERO_FLAG_BIT);
     interp.m_mb.unset_flag(MemoryBank::SIGN_FLAG_BIT);
   }
@@ -356,20 +386,13 @@ void VM::callbacks::cmp_cb(Interpreter &interp, const PL<OP::COMPARE> &p) {
 
 void VM::callbacks::cmpf_cb(Interpreter &interp,
                             const PL<OP::COMPARE_FLOAT> &p) {
-  float res = 0.0f;
-  try {
-    res = boost::numeric::converter<float, double>::convert(
-        (double)interp.m_mb.fl_regs_32[p.register1] -
-        (double)interp.m_mb.fl_regs_32[p.register2]);
-  } catch (boost::numeric::positive_overflow const &) {
-    interp.m_mb.set_flag(MemoryBank::OVERFLOW_FLAG_BIT);
-  } catch (boost::numeric::negative_overflow const &) {
-    interp.m_mb.set_flag(MemoryBank::OVERFLOW_FLAG_BIT);
-  }
+  float v1 = interp.m_mb.fl_regs_32[p.register1];
+  float v2 = interp.m_mb.fl_regs_32[p.register2];
 
-  if (res == 0.0f) {
+  if (v1 == v2) {
     interp.m_mb.set_flag(MemoryBank::ZERO_FLAG_BIT);
-  } else if (res > 0.0f) {
+    interp.m_mb.unset_flag(MemoryBank::SIGN_FLAG_BIT);
+  } else if (v1 > v2) {
     interp.m_mb.unset_flag(MemoryBank::ZERO_FLAG_BIT);
     interp.m_mb.set_flag(MemoryBank::SIGN_FLAG_BIT);
   } else {
