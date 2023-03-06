@@ -48,27 +48,31 @@
 *** a vector and than call them from the interpreter runtime.
 /*/
 
+/*/
+*** FIXME: These macros were written on a Little-Endian machine and thus they
+*** need to be rewritten to account for the endianness of the system the
+*** interpreter runs on. To be quite honest the MemoryBank class needs to be
+*** rewriten to address this issue.
+/*/
 #define ADDR(addr)                                                             \
-  (addr & 0xff000000) << 0, (addr & 0x00ff0000) >> 8,                          \
-      (addr & 0x0000ff00) >> 16, (addr & 0x000000ff) >> 24
+  (addr & 0x000000ff) >> 0, (addr & 0x0000ff00) >> 8,                          \
+      (addr & 0x00ff0000) >> 16, (addr & 0xff000000) << 24
 
 #define REG(r) r
 
 #define IMM(imm)                                                               \
-  (imm & 0xff000000) << 0, (imm & 0x00ff0000) >> 8, (imm & 0x0000ff00) >> 16,  \
-      (imm & 0x000000ff) >> 24
+  (imm & 0x000000ff) >> 0, (imm & 0x0000ff00) >> 8, (imm & 0x00ff0000) >> 16,  \
+      (imm & 0xff000000) << 24
 
 int main(int argc, char **argv) {
   using OPC = VM::OpCodes;
 
   try {
 
-    const uint8_t addr[4]{ADDR(0xfaff)};
-    std::cout << "ADDR: " << std::hex << (int)addr[0] << std::hex
-              << (int)addr[1] << std::hex << (int)addr[2] << std::hex
-              << (int)addr[3] << std::endl;
+    const uint8_t imm_bytes[4] = {IMM(20)};
 
-    std::cout << *(int *)addr << std::endl;
+    std::cout << "REG: " << REG(1) << std::endl;
+    std::cout << "IMM: " << *(uint32_t *)&imm_bytes << std::endl;
 
     // clang-format off
     VirtualMachine vm;
@@ -77,6 +81,7 @@ int main(int argc, char **argv) {
             OPC::LOAD_IMMEDIATE,  IMM(7), REG(2),
             OPC::ADD_INT, REG(1), REG(2), REG(1),
             OPC::STORE, REG(1), ADDR(0xff),
+            OPC::COMPARE, REG(1), REG(2),
             OPC::LOAD_FLOAT_IMMEDIATE, REG(1), IMM(0),
             OPC::HALT
     };
@@ -89,9 +94,10 @@ int main(int argc, char **argv) {
     std::cout << "Hello there!" << std::endl;
 
     vm.m_interp.m_mb.print_registers();
+    bool comparison = vm.m_interp.m_mb.check_flag(MemoryBank::ZERO_FLAG_BIT);
 
-    std::cout << "Press any key to exit..." << std::endl;
-    getchar();
+    std::cout << "Coparison: " << comparison << std::endl;
+
   } catch (std::runtime_error re) {
     std::cout << "RUNTIME_ERROR: " << re.what() << std::endl;
   }
