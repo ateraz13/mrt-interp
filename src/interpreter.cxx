@@ -40,8 +40,14 @@ void Interpreter::run() {
   auto &pc = m_mb.gp_regs_32[MemoryBank::PROGRAM_COUNTER_REG];
   auto &mem = m_mb.memory;
 
-  while (pc < mem.size()) {
-    VM::run_next_instruction(*this);
+  try {
+    while (pc < mem.size()) {
+      VM::run_next_instruction(*this);
+    }
+  } catch (std::runtime_error re) {
+    std::cerr << "An fatal error has occured during runtime of the "
+                 "interpreter.\nRUNTIME_ERROR: "
+              << re.what() << std::endl;
   }
 }
 using Interpreter = Interpreter;
