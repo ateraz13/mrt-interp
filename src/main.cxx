@@ -48,19 +48,36 @@
 *** a vector and than call them from the interpreter runtime.
 /*/
 
+#define ADDR(addr)                                                             \
+  (addr & 0xff000000) << 0, (addr & 0x00ff0000) >> 8,                          \
+      (addr & 0x0000ff00) >> 16, (addr & 0x000000ff) >> 24
+
+#define REG(r) r
+
+#define IMM(imm)                                                               \
+  (imm & 0xff000000) << 0, (imm & 0x00ff0000) >> 8, (imm & 0x0000ff00) >> 16,  \
+      (imm & 0x000000ff) >> 24
+
 int main(int argc, char **argv) {
   using OPC = VM::OpCodes;
 
   try {
 
+    const uint8_t addr[4]{ADDR(0xfaff)};
+    std::cout << "ADDR: " << std::hex << (int)addr[0] << std::hex
+              << (int)addr[1] << std::hex << (int)addr[2] << std::hex
+              << (int)addr[3] << std::endl;
+
+    std::cout << *(int *)addr << std::endl;
+
     // clang-format off
     VirtualMachine vm;
     Interpreter::BytecodeBuffer bb{
-            OPC::LOAD_IMMEDIATE,  0x05, 0x00, 0x00, 0x00, 0x01 /* REG1*/,
-            OPC::LOAD_IMMEDIATE,  0x07, 0x00, 0x00, 0x00, 0x02 /* REG2 */,
-            OPC::ADD_INT, 0x1, 0x2, 0x1, /* REG1 += REG2 */
-            OPC::STORE, 0x01, /* REG1 */ 0xff, 0x00, 0x00, 0x00, /* ADDR: 255 = 0xff */
-            OPC::LOAD_FLOAT_IMMEDIATE, 0x00 /* FL_REG1 */, 0xff, 0xff, 0xff, 0xff,
+            OPC::LOAD_IMMEDIATE, IMM(5), REG(1),
+            OPC::LOAD_IMMEDIATE,  IMM(7), REG(2),
+            OPC::ADD_INT, REG(1), REG(2), REG(1),
+            OPC::STORE, REG(1), ADDR(0xff),
+            OPC::LOAD_FLOAT_IMMEDIATE, REG(1), IMM(0),
             OPC::HALT
     };
     // clang-format on
