@@ -1,6 +1,7 @@
 #ifndef ASSEMBLER_HXX
 #define ASSEMBLER_HXX
 #include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -51,11 +52,12 @@ public:
 
   MaybeTokenVector tokenize(const std::string &str);
 
-  const std::vector<std::string> get_errors() const { return errors; };
+  const std::vector<std::string> get_errors() const { return m_errors; };
 
 private:
   std::vector<Label> m_labels;
   std::vector<uint8_t> m_bytecode;
+  std::vector<std::string> m_errors;
   Tokenizer m_tokinizer;
 };
 } // namespace assembler
