@@ -79,9 +79,12 @@ int main(int argc, char **argv) {
     Interpreter::BytecodeBuffer bb{
             OPC::LOAD_IMMEDIATE, IMM(5), REG(1),
             OPC::LOAD_IMMEDIATE,  IMM(7), REG(2),
+            OPC::LOAD_IMMEDIATE, IMM(150), REG(10),
+            OPC::LOAD_IMMEDIATE, IMM(150), REG(11),
             OPC::ADD_INT, REG(1), REG(2), REG(1),
             OPC::STORE, REG(1), ADDR(0xff),
             OPC::COMPARE, REG(1), REG(2),
+            OPC::COMPARE, REG(10), REG(11),
             OPC::LOAD_FLOAT_IMMEDIATE, REG(1), IMM(0),
             OPC::HALT
     };
@@ -91,12 +94,14 @@ int main(int argc, char **argv) {
     vm.m_interp.load_program(bb);
     vm.m_interp.run();
 
-    std::cout << "Hello there!" << std::endl;
-
     vm.m_interp.m_mb.print_registers();
-    bool comparison = vm.m_interp.m_mb.check_flag(MemoryBank::ZERO_FLAG_BIT);
 
-    std::cout << "Coparison: " << comparison << std::endl;
+    auto print_zero_flag = [&]() {
+      bool is_equal = vm.m_interp.m_mb.check_flag(MemoryBank::ZERO_FLAG_BIT);
+      std::cout << "Is Equal: " << is_equal << std::endl;
+    };
+
+    print_zero_flag();
 
   } catch (std::runtime_error re) {
     std::cout << "RUNTIME_ERROR: " << re.what() << std::endl;
