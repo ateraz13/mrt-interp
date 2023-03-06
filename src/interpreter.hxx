@@ -130,8 +130,11 @@ public:
 
   void print_registers() const {
     for (uint32_t i = 0; i < GP_REGS_32_COUNT; i++) {
-      std::cout << "REG" << i << ": " << gp_regs_32[i] << std::endl;
+      std::cout << "GP_REGISTER[0x" << i << "] = " << gp_regs_32[i]
+                << std::endl;
     }
+
+    std::cout << "\n";
 
     std::cout << "STACK_PTR: " << gp_regs_32[STACK_PTR_REG] << std::endl;
     std::cout << "PROGRAM_COUNTER: " << gp_regs_32[PROGRAM_COUNTER_REG]
@@ -142,7 +145,8 @@ public:
     std::cout << "\n";
 
     for (uint32_t i = 0; i < FL_REGS_32_COUNT; i++) {
-      std::cout << "FL_REG" << i << ": " << fl_regs_32[i] << std::endl;
+      std::cout << "FLOAT_REGISTER[0x" << i << "] = " << fl_regs_32[i]
+                << std::endl;
     }
   }
 };
