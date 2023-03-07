@@ -86,6 +86,11 @@ int main(int argc, char **argv) {
             OPC::COMPARE, REG(1), REG(2),
             OPC::COMPARE, REG(10), REG(11),
             OPC::LOAD_FLOAT_IMMEDIATE, REG(1), IMM(0),
+            OPC::LOAD_IMMEDIATE, IMM(10), REG(8),
+            // WHILE(REG(9) < 10)
+            OPC::COMPARE, REG(8), REG(9),
+            OPC::ADD_INT_IMMEDIATE, REG(9), IMM(1), REG(9),
+            OPC::JUMP_GREATER_THAN, ADDR(0x00),
             OPC::HALT
     };
     // clang-format on

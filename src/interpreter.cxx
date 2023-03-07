@@ -10,11 +10,11 @@
 
 #define GP_REG(reg) interp.m_mb.gp_regs_32[reg]
 #define GP_REG_INFO(reg)                                                       \
-  "(R" << reg << " = " << interp.m_mb.gp_regs_32[reg] << ")"
+  "(R" << (int)reg << " = " << interp.m_mb.gp_regs_32[reg] << ")"
 
 #define FL_REG(reg) interp.m_mb.fl_regs_32[reg]
 #define FL_REG_INFO(reg)                                                       \
-  "(R" << reg << " = " << interp.m_mb.fl_regs_32[reg] << ")"
+  "(R" << (int)reg << " = " << interp.m_mb.fl_regs_32[reg] << ")"
 
 #define PC_REG interp.m_mb.gp_regs_32[MemoryBank::PROGRAM_COUNTER_REG]
 
@@ -128,7 +128,7 @@ void VM::callbacks::ldi_cb(Interpreter &interp,
                            const PL<OP::LOAD_IMMEDIATE> &p) {
 #ifdef DEBUG_EXTRA_INFO
   std::clog << "Loading immediate value (" << p.immediate_value
-            << ") into register R" << (int)p.destination << std::endl;
+            << ") into register " << GP_REG_INFO(p.destination) << std::endl;
 #endif
   GP_REG(p.destination) = p.immediate_value;
 }
@@ -193,6 +193,12 @@ void VM::callbacks::add_cb(Interpreter &interp, const PL<OP::ADD_INT> &p) {
 
 void VM::callbacks::addi_cb(Interpreter &interp,
                             const PL<OP::ADD_INT_IMMEDIATE> &p) {
+#ifdef DEBUG_EXTRA_INFO
+  std::clog << "Adding immediate value(" << p.immediate_value
+            << ") to a gp register " << GP_REG_INFO(p.source)
+            << " and storing result in gp register "
+            << GP_REG_INFO(p.destination) << "\n";
+#endif
   GP_REG(p.destination) = GP_REG(p.source) + p.immediate_value;
 }
 
@@ -282,6 +288,11 @@ void VM::callbacks::jmp_cb(Interpreter &interp, const PL<OP::JUMP> &p) {
 // subtraction to compare two values and if the result is zero that means the
 // values are equal.
 void VM::callbacks::jz_cb(Interpreter &interp, const PL<OP::JUMP_ZERO> &p) {
+
+#ifdef DEBUG_EXTRA_INFO
+  std::clog << "Jump zero to address " << p.jump_address << "\n";
+#endif
+
   if (CHECK_FLAG(ZERO_FLAG_BIT)) {
     jmp_cb(interp, {p.jump_address});
   }
@@ -305,8 +316,7 @@ void VM::callbacks::jer_cb(Interpreter &interp,
 
 void VM::callbacks::jlt_cb(Interpreter &interp,
                            const PL<OP::JUMP_LESS_THAN> &p) {
-  if (CHECK_FLAG(ZERO_FLAG_BIT) ||
-      CHECK_FLAG(SIGN_FLAG_BIT) != CHECK_FLAG(OVERFLOW_FLAG_BIT)) {
+  if (!CHECK_FLAG(ZERO_FLAG_BIT) || !CHECK_FLAG(SIGN_FLAG_BIT)) {
     jmp_cb(interp, {p.jump_address});
   }
 }
@@ -318,8 +328,7 @@ void VM::callbacks::jltr_cb(Interpreter &interp,
 
 void VM::callbacks::jgt_cb(Interpreter &interp,
                            const PL<OP::JUMP_GREATER_THAN> &p) {
-  if (CHECK_FLAG(ZERO_FLAG_BIT) &&
-      CHECK_FLAG(SIGN_FLAG_BIT) == CHECK_FLAG(OVERFLOW_FLAG_BIT)) {
+  if (!CHECK_FLAG(ZERO_FLAG_BIT) && CHECK_FLAG(SIGN_FLAG_BIT)) {
     jmp_cb(interp, {p.jump_address});
   }
 }
