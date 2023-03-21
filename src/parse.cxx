@@ -46,10 +46,10 @@ std::pair<bool, CharIter> find_decimal_point_before_space(CharIter begin_iter,
     if (*begin_iter == '.') {
       return {true, begin_iter};
     } else if (!is_digit(*begin_iter)) {
-      throw ParseError(
-          (fmt("Expected floating point literal\nInvalid character: %1%") %
-           *begin_iter)
-              .str());
+      auto msg =
+          fmt("Expected floating point literal\nInvalid character: %1%") %
+          *begin_iter;
+      throw ParseError(msg.str());
     }
     begin_iter++;
   }
@@ -80,8 +80,8 @@ std::pair<MathOperator, CharIter> parse_operator(CharIter begin_iter,
     op = MathOperator::MULT;
     break;
   default:
-    throw ParseError(
-        (fmt("Expected an operator found %1%") % *begin_iter).str());
+    auto msg = fmt("Expected an operator found %1%") % *begin_iter;
+    throw ParseError(msg.str());
     break;
   }
 
@@ -89,7 +89,6 @@ std::pair<MathOperator, CharIter> parse_operator(CharIter begin_iter,
 }
 
 std::pair<int, CharIter> parse_int(CharIter begin_iter, CharIter end_iter) {
-  std::stringstream strstrm;
   int count = 1;
   int sum = 0;
 
@@ -102,22 +101,56 @@ std::pair<int, CharIter> parse_int(CharIter begin_iter, CharIter end_iter) {
 
   for (auto &i = begin_iter; i != last_digit; i++) {
     auto c = *i;
-    if (c < '0' || c > '9') {
-      strstrm << "Expected integer literal!\nInvalid digit: '" << c << "'";
-      throw ParseError(strstrm.str());
+
+    if (!is_digit(c)) {
+      auto msg = fmt("Expected integer literal!\nInvalid digit: '%1%'") % c;
+      throw ParseError(msg.str());
     }
 
     int n = c - '0';
-    sum += n * pow(10, std::distance(i, last_digit) - 1);
+    sum = sum * 10 + n;
   }
 
   if (begin_iter != end_iter && !is_space(*begin_iter)) {
-    strstrm << "Unexpected symbol after integer literal: '" << *begin_iter
-            << "'";
-    throw ParseError(strstrm.str());
+    auto msg =
+        fmt("Unexpected symbol after integer literal: '%1%'") % *begin_iter;
+    throw ParseError(msg.str());
   }
 
   return {is_negative ? -sum : sum, begin_iter};
+}
+
+std::pair<double, CharIter> parse_float_decimal_part(CharIter begin_iter,
+                                                     CharIter end_iter) {
+
+  float decimal_place = 0.1f;
+  auto &i = begin_iter;
+  float sum = 0.0f;
+
+  if (*begin_iter == '.') {
+    begin_iter++;
+
+    while (begin_iter != end_iter) {
+
+      char c = *i;
+
+      if (!is_digit(c)) {
+        auto msg = fmt("Expected digit after decimal point while "
+                       "parsing float! (FOUND:  %1%)") %
+                   c;
+        throw ParseError(msg.str());
+      }
+
+      sum = sum + decimal_place * c;
+      decimal_place *= 0.1f;
+
+      return {sum, begin_iter};
+    }
+  } else {
+    return {sum, begin_iter};
+  }
+
+  return {sum, i};
 }
 
 std::pair<double, CharIter> parse_float(CharIter begin_iter,
@@ -127,55 +160,40 @@ std::pair<double, CharIter> parse_float(CharIter begin_iter,
 
   skip_whitespaces(begin_iter, end_iter);
 
-  CharIter decimal_point_pos;
-  auto p = find_decimal_point_before_space(begin_iter, end_iter);
-  if (p.first) {
-    decimal_point_pos = p.second;
-  } else {
-    return std::pair<double, CharIter>(parse_int(begin_iter, end_iter));
-  }
-
   bool is_negative = *begin_iter == '-' ? true : false;
   is_negative ? begin_iter++ : begin_iter; // increment iter
 
-  auto &i = begin_iter;
-  for (; i != decimal_point_pos; i++) {
-    auto c = *i;
-    if (c < '0' || c > '9') {
-      throw ParseError(
-          (fmt("Expected floating point literal\nInvalid digit: '%1%'") % c)
-              .str());
-    }
-
-    int n = c - '0';
-    sum += n * pow(10, std::distance(i, decimal_point_pos) - 1);
+  try {
+    auto res = parse_int(begin_iter, end_iter);
+    sum = res.first;
+    begin_iter = res.second;
+  } catch (ParseError err) {
+    auto msg = fmt("Failed while parsing integer part of float with: \n%1%",
+                   err.what());
+    throw ParseError(msg.str());
   }
 
-  auto last_digit = find_last_digit(decimal_point_pos + 1, end_iter);
-  auto decimal_size = std::distance(decimal_point_pos + 1, last_digit);
+  if (begin_iter != end_iter) {
+    try {
+      auto res = parse_float_decimal_part(begin_iter, end_iter);
+      sum += res.first;
+      begin_iter = res.second;
 
-  for (i++; i < last_digit; i++) {
-    auto c = *i;
-    if (c < '0' || c > '9') {
-      throw ParseError(
-          (fmt("Expected floating point literal\nInvalid Character: '%1%'") %
-           *begin_iter)
-              .str());
+    } catch (ParseError err) {
+      auto msg =
+          fmt("Failed while parsing decimal part of a float with: \n %1%") %
+          err.what();
+      throw ParseError(msg.str());
     }
-
-    int n = c - '0';
-    sum +=
-        n * 1.0f / pow(10, decimal_size - (std::distance(i, last_digit) - 1));
-    count += 1;
   }
 
   if (begin_iter != end_iter && !is_space(*begin_iter)) {
-    throw ParseError(
-        (fmt("Unexpected symbol after integer literal: '%1%'") % *begin_iter)
-            .str());
+    auto msg =
+        fmt("Unexpected symbol after integer literal: '%1%'") % *begin_iter;
+    throw ParseError(msg.str());
   }
 
-  return {is_negative ? -sum : sum, i};
+  return {is_negative ? -sum : sum, begin_iter};
 }
 
 std::ostream &operator<<(std::ostream &out_strm, MathOperator op) {
