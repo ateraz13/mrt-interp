@@ -168,8 +168,8 @@ std::pair<double, CharIter> parse_float(CharIter begin_iter,
     sum = res.first;
     begin_iter = res.second;
   } catch (ParseError err) {
-    auto msg = fmt("Failed while parsing integer part of float with: \n%1%",
-                   err.what());
+    auto msg = fmt("Failed while parsing integer part of float with: \n%1%") %
+               err.what();
     throw ParseError(msg.str());
   }
 
