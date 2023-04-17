@@ -9,6 +9,15 @@ using fmt = boost::format;
 
 // NOTE: This function is being called several times in a row, first in the
 // tokenize function and then in the parse functions one after another.
+// TODO: Instead of skipping whitespaces in the parse functions we can implement
+// some basic token combinator framework and things like this would naturally
+// vanish.
+// This way the high level code can be writen in similar manner like "yacc".
+// We would have to map token types to their respective parse functions and than
+// the high level parse function would walk through all the combinations of
+// tokens it might possibly stumble upon. It would definitely be easier to write
+// such function as we would avoid handling specific parse sequences and would
+// probably reduce code size by significant margin.
 void skip_whitespaces(CharIter &begin_iter, CharIter end_iter) {
   while (begin_iter != end_iter && *begin_iter == ' ') {
     begin_iter++;
