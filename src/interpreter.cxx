@@ -8,6 +8,13 @@
 
 #define DEBUG_EXTRA_INFO
 
+#ifdef DEBUG_EXTRA_INFO
+#define DBG(whatever) whatever
+#else // DEBUG_EXTRA_INFO
+#define DBG(whatever)
+#endif
+
+
 #define GP_REG(reg) interp.m_mb.gp_regs_32[reg]
 #define GP_REG_INFO(reg)                                                       \
   "(R" << (int)reg << " = " << interp.m_mb.gp_regs_32[reg] << ")"
@@ -32,9 +39,7 @@ using OpCodes = VM::OpCodes;
 // systems endianness since the vm stores numbers in little-endian format.
 
 void Interpreter::load_program(BytecodeBuffer &buffer) {
-#ifdef DEBUG_EXTRA_INFO
-  std::cout << "Loading program!\n";
-#endif
+  DBG(std::cout << "Loading program!\n");
   if (buffer.size() > m_mb.memory.size()) {
     throw std::runtime_error(
         (boost::format("Program too large for VM memory!(size: %1%)") %
@@ -126,10 +131,8 @@ void VM::callbacks::lhw_cb(Interpreter &interp,
 
 void VM::callbacks::ldi_cb(Interpreter &interp,
                            const PL<OP::LOAD_IMMEDIATE> &p) {
-#ifdef DEBUG_EXTRA_INFO
-  std::clog << "Loading immediate value (" << p.immediate_value
-            << ") into register " << GP_REG_INFO(p.destination) << std::endl;
-#endif
+  DBG(std::clog << "Loading immediate value (" << p.immediate_value
+            << ") into register " << GP_REG_INFO(p.destination) << std::endl);
   GP_REG(p.destination) = p.immediate_value;
 }
 
@@ -193,12 +196,10 @@ void VM::callbacks::add_cb(Interpreter &interp, const PL<OP::ADD_INT> &p) {
 
 void VM::callbacks::addi_cb(Interpreter &interp,
                             const PL<OP::ADD_INT_IMMEDIATE> &p) {
-#ifdef DEBUG_EXTRA_INFO
-  std::clog << "Adding immediate value(" << p.immediate_value
+  DBG(std::clog << "Adding immediate value(" << p.immediate_value
             << ") to a gp register " << GP_REG_INFO(p.source)
             << " and storing result in gp register "
-            << GP_REG_INFO(p.destination) << "\n";
-#endif
+            << GP_REG_INFO(p.destination) << "\n");
   GP_REG(p.destination) = GP_REG(p.source) + p.immediate_value;
 }
 
@@ -257,30 +258,24 @@ void VM::callbacks::mulif_cb(Interpreter &interp,
 }
 
 void VM::callbacks::divf_cb(Interpreter &interp, const PL<OP::DIV_FLOAT> &p) {
-#ifdef DEBUG_EXTRA_INFO
-  std::clog << "Dividing two float registers " << FL_REG_INFO(p.source1)
-            << " and " << FL_REG_INFO(p.source2) << "\n";
-#endif
+  DBG(std::clog << "Dividing two float registers " << FL_REG_INFO(p.source1)
+            << " and " << FL_REG_INFO(p.source2) << "\n");
   FL_REG(p.destination) = FL_REG(p.source1) / FL_REG(p.source2);
 }
 
 void VM::callbacks::divif_cb(Interpreter &interp,
                              const PL<OP::DIV_FLOAT_IMMEDIATE> &p) {
-#ifdef DEBUG_EXTRA_INFO
-  std::clog << "Dividing float register with float immediate (R" << p.source
+  DBG(std::clog << "Dividing float register with float immediate (R" << p.source
             << " = " << FL_REG(p.source) << ") and " << p.immediate_value
-            << "\n.";
-  std::clog << "Destination register R" << p.destination << ".\n";
-#endif
+            << "\n.");
+  DBG(std::clog << "Destination register R" << p.destination << ".\n");
   FL_REG(p.destination) = FL_REG(p.source) / p.immediate_value;
 }
 
 void VM::callbacks::jmp_cb(Interpreter &interp, const PL<OP::JUMP> &p) {
   check_mem_address_with_throw(p.jump_address);
-#ifdef DEBUG_EXTRA_INFO
-  std::clog << "Jumping to immediate value address (" << p.jump_address
-            << ")\n";
-#endif
+  DBG(std::clog << "Jumping to immediate value address (" << p.jump_address
+            << ")\n");
   PC_REG = p.jump_address;
 }
 
@@ -289,9 +284,7 @@ void VM::callbacks::jmp_cb(Interpreter &interp, const PL<OP::JUMP> &p) {
 // values are equal.
 void VM::callbacks::jz_cb(Interpreter &interp, const PL<OP::JUMP_ZERO> &p) {
 
-#ifdef DEBUG_EXTRA_INFO
-  std::clog << "Jump zero to address " << p.jump_address << "\n";
-#endif
+  DBG(std::clog << "Jump zero to address " << p.jump_address << "\n");
 
   if (CHECK_FLAG(ZERO_FLAG_BIT)) {
     jmp_cb(interp, {p.jump_address});
@@ -344,17 +337,13 @@ void VM::callbacks::jgtr_cb(Interpreter &interp,
 void VM::callbacks::jmpr_cb(Interpreter &interp,
                             const PL<OP::JUMP_REGISTER> &p) {
   check_mem_address_with_throw(GP_REG(p.jump_register));
-#ifdef DEBUG_EXTRA_INFO
-  std::clog << "Jumping to address stored in register (R" << p.jump_register
-            << " = " << GP_REG(p.jump_register) << ").\n";
-#endif
+  DBG(std::clog << "Jumping to address stored in register (R" << p.jump_register
+            << " = " << GP_REG(p.jump_register) << ").\n");
   PC_REG = GP_REG(p.jump_register);
 }
 
 void VM::callbacks::halt_cb(Interpreter &interp, const PL<OP::HALT> &) {
-#ifdef DEBUG_EXTRA_INFO
-  std::clog << "Halting the machine.\n";
-#endif
+  DBG(std::clog << "Halting the machine.\n");
   interp.stop();
 }
 
@@ -369,11 +358,9 @@ void VM::callbacks::cmp_cb(Interpreter &interp, const PL<OP::COMPARE> &p) {
   // hardware. The only thing that insterest me how I got to that idea in the
   // first place.
 
-#ifdef DEBUG_EXTRA_INFO
-  std::clog << "Comparing registers "
+  DBG(std::clog << "Comparing registers "
             << "R" << (int)p.register1 << " and "
-            << "R" << (int)p.register2 << std::endl;
-#endif
+            << "R" << (int)p.register2 << std::endl);
   auto v1 = GP_REG(p.register1);
   auto v2 = GP_REG(p.register2);
 
@@ -381,23 +368,17 @@ void VM::callbacks::cmp_cb(Interpreter &interp, const PL<OP::COMPARE> &p) {
   // than zero. See this is why you stop and think.
 
   if (v1 == v2) {
-#ifdef DEBUG_EXTRA_INFO
-    std::clog << v1 << " = " << v2 << std::endl;
-#endif
+    DBG(std::clog << v1 << " = " << v2 << std::endl);
     // Set zero flag and unset sign flag
     interp.m_mb.set_flag(MemoryBank::ZERO_FLAG_BIT);
     interp.m_mb.unset_flag(MemoryBank::SIGN_FLAG_BIT);
   } else if (v1 > v2) {
-#ifdef DEBUG_EXTRA_INFO
-    std::clog << v1 << " > " << v2 << std::endl;
-#endif
+    DBG(std::clog << v1 << " > " << v2 << std::endl);
     // Unset zero flag and set sign flag
     interp.m_mb.unset_flag(MemoryBank::ZERO_FLAG_BIT);
     interp.m_mb.set_flag(MemoryBank::SIGN_FLAG_BIT);
   } else {
-#ifdef DEBUG_EXTRA_INFO
-    std::clog << v1 << " < " << v2 << std::endl;
-#endif
+    DBG(std::clog << v1 << " < " << v2 << std::endl);
     // Set unset flag and unset sign flag
     interp.m_mb.unset_flag(MemoryBank::ZERO_FLAG_BIT);
     interp.m_mb.unset_flag(MemoryBank::SIGN_FLAG_BIT);
@@ -409,27 +390,19 @@ void VM::callbacks::cmpf_cb(Interpreter &interp,
   float v1 = FL_REG(p.register1);
   float v2 = FL_REG(p.register2);
 
-#ifdef DEBUG_EXTRA_INFO
-  std::clog << "Coparing two float registers R" << p.register1 << "and R"
-            << p.register2 << "\n";
-#endif
+  DBG(std::clog << "Coparing two float registers R" << p.register1 << "and R"
+            << p.register2 << "\n");
 
   if (v1 == v2) {
-#ifdef DEBUG_EXTRA_INFO
-    std::clog << v1 << " = " << v2 << "\n";
-#endif
+    DBG(std::clog << v1 << " = " << v2 << "\n");
     interp.m_mb.set_flag(MemoryBank::ZERO_FLAG_BIT);
     interp.m_mb.unset_flag(MemoryBank::SIGN_FLAG_BIT);
   } else if (v1 > v2) {
-#ifdef DEBUG_EXTRA_INFO
-    std::clog << v1 << " > " << v2 << "\n";
-#endif
+    DBG(std::clog << v1 << " > " << v2 << "\n");
     interp.m_mb.unset_flag(MemoryBank::ZERO_FLAG_BIT);
     interp.m_mb.set_flag(MemoryBank::SIGN_FLAG_BIT);
   } else {
-#ifdef DEBUG_EXTRA_INFO
-    std::clog << v1 << " < " << v2 << "\n";
-#endif
+    DBG(std::clog << v1 << " < " << v2 << "\n");
     interp.m_mb.unset_flag(MemoryBank::ZERO_FLAG_BIT);
     interp.m_mb.unset_flag(MemoryBank::SIGN_FLAG_BIT);
   }
@@ -469,9 +442,7 @@ RegID read_valid_float_regid(MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
 MemPtr read_valid_mem_address(MemoryBank::MemoryBuffer &buffer, uint32_t &pc) {
   check_bytes_ahead(buffer, pc, sizeof(MemPtr));
   auto mem_ptr = *reinterpret_cast<MemPtr *>(&buffer[pc]);
-#ifdef DEBUG_EXTRA_INFO
-  std::clog << "Reading Memory Address: " << mem_ptr << std::endl;
-#endif
+  DBG(std::clog << "Reading Memory Address: " << mem_ptr << std::endl);
   return mem_ptr;
 }
 
