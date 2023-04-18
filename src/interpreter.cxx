@@ -14,7 +14,6 @@
 #define DBG(whatever)
 #endif
 
-
 #define GP_REG(reg) interp.m_mb.gp_regs_32[reg]
 #define GP_REG_INFO(reg)                                                       \
   "(R" << (int)reg << " = " << interp.m_mb.gp_regs_32[reg] << ")"

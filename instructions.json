@@ -160,6 +160,86 @@
                 "destination" : "reg"
             }
         },
+        "OR" : {
+            "keyword" : "or",
+            "args" : {
+                "source1" : "reg",
+                "source2" : "reg",
+                "destination" : "reg"
+            }
+        },
+        "AND" : {
+            "keyword" : "and",
+            "args" : {
+                "source1" : "reg",
+                "source2" : "reg",
+                "destination" : "reg"
+            }
+        },
+        "XOR" : {
+            "keyword" : "xor",
+            "args" : {
+                "source1" : "reg",
+                "source2" : "reg",
+                "destination" : "reg"
+            }
+        },
+        "NOR" : {
+            "keyword" : "nor",
+            "args" : {
+                "source1" : "reg",
+                "source2" : "reg",
+                "destination" : "reg"
+            }
+        },
+        "NAND" : {
+            "keyword" : "nand",
+            "args" : {
+                "source1" : "reg",
+                "source2" : "reg",
+                "destination" : "reg"
+            }
+        },
+        "OR_IMMEDIATE" : {
+            "keyword" : "ori",
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "u32",
+                "destination" : "reg"
+            }
+        },
+        "AND_IMMEDIATE" : {
+            "keyword" : "andi",
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "u32",
+                "destination" : "reg"
+            }
+        },
+        "XOR_IMMEDIATE" : {
+            "keyword" : "xori",
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "u32",
+                "destination" : "reg"
+            }
+        },
+        "NOR_IMMEDIATE" : {
+            "keyword" : "nori",
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "u32",
+                "destination" : "reg"
+            }
+        },
+        "NAND_IMMEDIATE" : {
+            "keyword" : "nand",
+            "args" : {
+                "source1" : "reg",
+                "immediate_value" : "u32",
+                "destination" : "reg"
+            }
+        },
         "ADD_INT" : {
             "keyword" : "add",
             "args" : {
