@@ -1,7 +1,7 @@
-#include "instructions.hxx"
-#include "interpreter.hxx"
-#include "parse/parse.hxx"
-#include "parse/syntax.hxx"
+#include <interp/instructions.hxx>
+#include <interp/interpreter.hxx>
+#include <interp/parse/parse.hxx>
+#include <interp/parse/syntax.hxx>
 #include <algorithm>
 #include <cmath>
 #include <cstring>

@@ -1,5 +1,5 @@
-#include "syntax.hxx"
-#include "parse.hxx"
+#include <interp/parse/syntax.hxx>
+#include <interp/parse/parse.hxx>
 
 std::ostream& operator<<(std::ostream& out_strm, ExpressionToken expr){
 

@@ -1,4 +1,4 @@
-#include "test_instructions.hxx"
+#include <interp/test_instructions.hxx>
 
 int main(int argc, char** argv)
 {
