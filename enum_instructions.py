@@ -113,7 +113,7 @@ class CodeGenerator:
 
 class InstructionGenerator(CodeGenerator):
 
-    header_filename = "./src/instructions.hxx"
+    header_filename = "./include/interp/instructions.hxx"
     source_filename = "./src/instructions.cxx"
     data_json_filename = ""
 

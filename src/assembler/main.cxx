@@ -1,4 +1,4 @@
-#include "assembler.hxx"
+#include <interp/assembler/assembler.hxx>
 #include <iostream>
 
 namespace assembler {

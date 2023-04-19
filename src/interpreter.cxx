@@ -1,5 +1,5 @@
-#include "interpreter.hxx"
-#include "instructions.hxx"
+#include <interp/interpreter.hxx>
+#include <interp/instructions.hxx>
 #include <boost/format.hpp>
 #include <boost/limits.hpp>
 #include <boost/numeric/conversion/converter.hpp>
@@ -33,11 +33,8 @@ using OpCodes = VM::OpCodes;
 // NOTE: We need to deal with endienness in immediate values, memory addresses
 // etc.
 
-// FIXME: This function does nothing since it was writen on x86 system.
-// On big-endian systems it needs to switch the bytes around to match the
-// systems endianness since the vm stores numbers in little-endian format.
-
 void Interpreter::load_program(BytecodeBuffer &buffer) {
+
   DBG(std::cout << "Loading program!\n");
   if (buffer.size() > m_mb.memory.size()) {
     throw std::runtime_error(
@@ -71,7 +68,7 @@ void Interpreter::run() {
     }
   } catch (std::runtime_error re) {
     std::cerr << "An fatal error has occured during runtime of the "
-                 "interpreter.\nRUNTIME_ERROR: "
+      "interpreter.\nRUNTIME_ERROR: "
               << re.what() << std::endl;
   }
 }
@@ -79,8 +76,10 @@ using Interpreter = Interpreter;
 
 // NOTE: Don't implement everything in the MemoryBank because than we
 // unnecessarily have bigger call stack. Just access private members variables
-// of the MemoryBank from here. NOTE: It might be more efficient to verify
-// memory pointers during decoding in the excecute method. NOTE: Instead of
+// of the MemoryBank from here.
+// NOTE: It might be more efficient to verify
+// memory pointers during decoding in the excecute method.
+// NOTE: Instead of
 // interpreting the bytecode directly we can use JIT (Just in Time) compilation
 // to native machine code.
 // NOTE: Mathematical operations are done in order the values are supplied in.
@@ -189,6 +188,46 @@ void VM::callbacks::srli_cb(Interpreter &interp,
   GP_REG(p.destination) = GP_REG(p.source) >> p.shift_by;
 }
 
+void VM::callbacks::or_cb(Interpreter &interp, const PL<OP::OR> &p) {
+  GP_REG(p.destination) = GP_REG(p.source1) | GP_REG(p.source2);
+}
+
+void VM::callbacks::and_cb(Interpreter &interp, const PL<OP::AND> &p) {
+  GP_REG(p.destination) = GP_REG(p.source1) & GP_REG(p.source2);
+}
+
+void VM::callbacks::xor_cb(Interpreter &interp, const PL<OP::XOR> &p) {
+  GP_REG(p.destination) = GP_REG(p.source1) ^ GP_REG(p.source2);
+}
+
+void VM::callbacks::nor_cb(Interpreter &interp, const PL<OP::NOR> &p) {
+  GP_REG(p.destination) = !(GP_REG(p.source1) | GP_REG(p.source2));
+}
+
+void VM::callbacks::nand_cb(Interpreter &interp, const PL<OP::NAND> &p) {
+  GP_REG(p.destination) = !(GP_REG(p.source1) & GP_REG(p.source2));
+}
+
+void VM::callbacks::ori_cb(Interpreter &interp, const PL<OP::OR_IMMEDIATE> &p) {
+  GP_REG(p.destination) = GP_REG(p.source1) | p.immediate_value;
+}
+
+void VM::callbacks::andi_cb(Interpreter &interp, const PL<OP::AND_IMMEDIATE> &p) {
+  GP_REG(p.destination) = GP_REG(p.source1) & p.immediate_value;
+}
+
+void VM::callbacks::xori_cb(Interpreter &interp, const PL<OP::XOR_IMMEDIATE> &p) {
+  GP_REG(p.destination) = GP_REG(p.source1) ^ p.immediate_value;
+}
+
+void VM::callbacks::nori_cb(Interpreter &interp, const PL<OP::NOR_IMMEDIATE> &p) {
+  GP_REG(p.destination) = ~(GP_REG(p.source1) | p.immediate_value);
+}
+
+void VM::callbacks::nandi_cb(Interpreter &interp, const PL<OP::NAND_IMMEDIATE> &p) {
+  GP_REG(p.destination) = ~(GP_REG(p.source1) & p.immediate_value);
+}
+
 void VM::callbacks::add_cb(Interpreter &interp, const PL<OP::ADD_INT> &p) {
   GP_REG(p.destination) = GP_REG(p.source1) + GP_REG(p.source2);
 }
@@ -211,7 +250,7 @@ void VM::callbacks::subi_cb(Interpreter &interp,
   GP_REG(p.destination) = GP_REG(p.source) - p.immediate_value;
 }
 
-void VM::callbacks::mul_cb(Interpreter &interp, const PL<OP::MULT_INT> &p) {
+void VM::callbacks::mult_cb(Interpreter &interp, const PL<OP::MULT_INT> &p) {
   GP_REG(p.destination) = GP_REG(p.source1) * GP_REG(p.source2);
 }
 

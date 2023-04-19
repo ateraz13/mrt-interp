@@ -1,6 +1,6 @@
-#include "assembler.hxx"
+#include <interp/assembler/assembler.hxx>
 #include <cstdint>
-#include <instructions.hxx>
+#include <interp/instructions.hxx>
 #include <iterator>
 #include <string>
 #include <vector>

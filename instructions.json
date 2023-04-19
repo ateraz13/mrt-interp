@@ -233,7 +233,7 @@
             }
         },
         "NAND_IMMEDIATE" : {
-            "keyword" : "nand",
+            "keyword" : "nandi",
             "args" : {
                 "source1" : "reg",
                 "immediate_value" : "u32",
@@ -265,7 +265,7 @@
             }
         },
         "MULT_INT" : {
-            "keyword" : "mul",
+            "keyword" : "mult",
             "args" : {
                 "source1" : "reg",
                 "source2" : "reg",
