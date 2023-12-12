@@ -7,6 +7,9 @@
 
 using fmt = boost::format;
 
+// FIXME: Instead of throwing an exception whenever we stumble upon an error,
+// it would be more reasonable to collect small errors on a stack and only throw
+// neccessary errors.
 // NOTE: This function is being called several times in a row, first in the
 // tokenize function and then in the parse functions one after another.
 // TODO: Instead of skipping whitespaces in the parse functions we can implement
